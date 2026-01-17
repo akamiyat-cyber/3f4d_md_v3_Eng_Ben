@@ -416,7 +416,8 @@ const TRANSLATIONS = {
         lbl_hv_off: "Harvest after heading",
         // Misc
         offline: "Offline Mode: Data saved locally",
-        export_csv: "CSV"
+        export_csv: "CSV",
+        calc_val: "Calc: "
     },
     bn: {
         title: "৩এফ৪ডি প্রো সময়সূচী",
@@ -470,7 +471,8 @@ const TRANSLATIONS = {
         lbl_hv_off: "শীষ আসার পর ফসল কাটা",
         // Misc
         offline: "অফলাইন মোড: ডেটা স্থানীয়ভাবে সংরক্ষিত",
-        export_csv: "CSV"
+        export_csv: "CSV",
+        calc_val: "গণনা: "
     }
 };
 
@@ -576,8 +578,8 @@ function initInputs() {
     const container = document.getElementById('date_inputs_container');
     container.innerHTML = "";
     dateKeys.forEach(k => {
-        container.innerHTML += `<div class="mb-2"><label class="small fw-bold mb-1">${t(k.id)}</label><div class="d-flex align-items-center gap-2"><input type="date" id="date_${k.id}" class="form-control form-control-sm input-${k.type}" onchange="updateFromManual('${k.id}')"><small id="ben_date_${k.id}" class="text-muted" style="font-size: 0.75rem; white-space: nowrap;"></small></div></div>`;
-        if (k.id === 'md_end') container.innerHTML += `<div class="yp-toggle-container"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="use_yp" onchange="toggleYP()"><label class="form-check-label small fw-bold" for="use_yp">${t('yp_label')}</label></div><div class="d-flex align-items-center gap-2"><input type="date" id="date_yp" class="form-control form-control-sm" disabled onchange="updateFromManual('yp')"><small id="ben_date_yp" class="text-muted" style="font-size: 0.75rem; white-space: nowrap;"></small></div></div>`;
+        container.innerHTML += `<div class="mb-2"><label class="small fw-bold mb-1">${t(k.id)} <span id="lock_icon_${k.id}" class="text-danger d-none">🔒</span></label><div class="d-flex align-items-center gap-2"><input type="date" id="date_${k.id}" class="form-control form-control-sm input-${k.type}" onchange="updateFromManual('${k.id}')"><small id="ben_date_${k.id}" class="text-muted" style="font-size: 0.75rem; white-space: nowrap;"></small></div></div>`;
+        if (k.id === 'md_end') container.innerHTML += `<div class="yp-toggle-container"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="use_yp" onchange="toggleYP()"><label class="form-check-label small fw-bold" for="use_yp">${t('yp_label')} <span id="lock_icon_yp" class="text-danger d-none">🔒</span></label></div><div class="d-flex align-items-center gap-2"><input type="date" id="date_yp" class="form-control form-control-sm" disabled onchange="updateFromManual('yp')"><small id="ben_date_yp" class="text-muted" style="font-size: 0.75rem; white-space: nowrap;"></small></div></div>`;
     });
 }
 
@@ -611,7 +613,10 @@ function getBengaliDate(gregorianDateStr) {
     const date = new Date(gregorianDateStr);
     
     // Approximate Bengali Calendar (Adjusted for Bangladesh)
-    const bengaliMonths = ["Boishakh", "Joishtho", "Ashar", "Srabon", "Bhadro", "Ashshin", "Kartik", "Ogrohayon", "Poush", "Magh", "Falgun", "Chaitra"];
+    // Month arrays for English and Bengali display
+    const bengaliMonthsEn = ["Boishakh", "Joishtho", "Ashar", "Srabon", "Bhadro", "Ashshin", "Kartik", "Ogrohayon", "Poush", "Magh", "Falgun", "Chaitra"];
+    const bengaliMonthsBn = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"];
+    
     const daysInMonth = [31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30];
     
     // Check for leap year for Falgun (index 10)
@@ -635,8 +640,15 @@ function getBengaliDate(gregorianDateStr) {
     }
     
     const benDay = dayOfYear + 1;
-    const benMonth = bengaliMonths[currentMonth];
-    return `${benDay} ${benMonth}`;
+
+    if (currentLang === 'bn') {
+        const benMonth = bengaliMonthsBn[currentMonth];
+        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+        return `${benDayStr} ${benMonth}`;
+    } else {
+        const benMonth = bengaliMonthsEn[currentMonth];
+        return `${benDay} ${benMonth}`;
+    }
 }
 
 function recalculate(triggerId) {
@@ -652,15 +664,20 @@ function recalculate(triggerId) {
             el.classList.remove('manual-highlight');
         }
     });
+
+    // Init autoDates container for calculation records
+    if(!f.autoDates) f.autoDates = {};
     
     const setV = (id, date) => { 
-        // Modified Logic: If ID is manual, DO NOT update from logic even if triggerId is 'all'
-        // This prevents overwriting manual entries during language switch or load
-        if (!f.manualKeys.includes(id)) { 
-            const el = document.getElementById('date_'+id); 
-            if(!isNaN(date)) { 
-                // Fix: Use String format to avoid Timezone issues (1 day shift)
-                const dateStr = formatDateISO(date);
+        if(!isNaN(date)) { 
+            const dateStr = formatDateISO(date);
+            // Always save calculated value as 'autoDates' (Initial/Plan)
+            f.autoDates[id] = dateStr;
+
+            // Only update actual dates if not manually locked
+            // This prevents overwriting manual entries during language switch or load
+            if (!f.manualKeys.includes(id)) { 
+                const el = document.getElementById('date_'+id); 
                 el.value = dateStr; 
                 f.dates[id] = dateStr; 
             }
@@ -763,6 +780,8 @@ function recalculate(triggerId) {
 
         // Locking Logic & Highlight Update
         const el = document.getElementById('date_'+k.id);
+        const lockIcon = document.getElementById('lock_icon_'+k.id);
+
         if(el) {
             let isDisabled = false;
             // Rule 1: Sowing/TP dependency
@@ -774,6 +793,10 @@ function recalculate(triggerId) {
                 isDisabled = true;
             }
             el.disabled = isDisabled;
+
+            if (lockIcon) {
+                isDisabled ? lockIcon.classList.remove('d-none') : lockIcon.classList.add('d-none');
+            }
 
             // Highlight Check
             if (f.manualKeys.includes(k.id)) {
@@ -790,10 +813,21 @@ function recalculate(triggerId) {
     
     const ypCheck = document.getElementById('use_yp');
     const ypDate = document.getElementById('date_yp');
+    const ypLockIcon = document.getElementById('lock_icon_yp');
+
     if(ypCheck) ypCheck.disabled = !allowOthers || (f.completed && f.completed.includes('yp'));
     if(ypDate) {
-        if(!allowOthers || (f.completed && f.completed.includes('yp'))) ypDate.disabled = true;
-        else ypDate.disabled = !ypCheck.checked;
+        let ypIsDisabled = false;
+        if(!allowOthers || (f.completed && f.completed.includes('yp'))) ypIsDisabled = true;
+        else ypIsDisabled = !ypCheck.checked;
+        
+        ypDate.disabled = ypIsDisabled;
+        
+        if (ypLockIcon) {
+            // YPのロックアイコンは全体が無効化されている場合のみ表示（チェックボックスオフでの無効化とは区別）
+            const isFullyLocked = !allowOthers || (f.completed && f.completed.includes('yp'));
+            isFullyLocked ? ypLockIcon.classList.remove('d-none') : ypLockIcon.classList.add('d-none');
+        }
     }
     // --------------------------------------------------------------------------
 
@@ -911,9 +945,19 @@ function refreshViews() {
 
             const isDone = f.completed && f.completed.includes(k.id);
 
+            // Calc (Initial) Value display logic
+            let calcInfo = "";
+            if (f.autoDates && f.autoDates[k.id] && f.autoDates[k.id] !== val) {
+                const benCalcDate = getBengaliDate(f.autoDates[k.id]);
+                calcInfo = `<br><span class="text-muted" style="font-size: 0.7em;">${t('calc_val')} ${f.autoDates[k.id]} (${benCalcDate})</span>`;
+            }
+
             tbody.innerHTML += `<tr class="${rowClass}">
                 <td>${t(k.id)}${warningText}</td>
-                <td class="fw-bold text-end">${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small></td>
+                <td class="fw-bold text-end">
+                    ${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small>
+                    ${calcInfo}
+                </td>
                 <td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('${k.id}')"></td>
             </tr>`;
         }
