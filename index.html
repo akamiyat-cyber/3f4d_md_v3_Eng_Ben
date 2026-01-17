@@ -102,7 +102,7 @@
 </div>
 
 <div class="header-section">
-    <div class="d-flex justify-content-between align-items-center">
+    <div class="d-flex justify-content-between align-items-center mb-2">
         <h5 class="fw-bold text-primary m-0">
             3F4D+MD Pro
             <span style="font-size: 0.5em; color: #6c757d;">(JICA/JST)</span>
@@ -320,14 +320,19 @@
       </div>
       <div class="modal-body">
         <input type="hidden" id="memoDate">
+        <h6 id="memoDateDisplay" class="mb-2 text-primary fw-bold"></h6>
         <textarea id="memoInput" class="form-control mb-3" rows="3" placeholder="Enter note..."></textarea>
-        <div class="mb-3">
+        
+        <div class="mb-3 border-top pt-2">
             <label class="form-label small fw-bold">Add Photo</label>
             <input type="file" id="photoInput" accept="image/*" capture="environment" class="form-control form-control-sm" onchange="previewPhoto(this)">
         </div>
+        
         <div id="photoPreviewContainer" class="text-center d-none">
-            <img id="photoPreviewImg" class="img-fluid rounded" style="max-height: 200px;">
-            <button class="btn btn-xs btn-outline-danger mt-2" onclick="clearPhoto()">Remove Photo</button>
+            <img id="photoPreviewImg" class="img-fluid rounded" style="max-height: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <div class="mt-2">
+                <button class="btn btn-xs btn-outline-danger" onclick="clearPhoto()">Remove Photo</button>
+            </div>
         </div>
       </div>
       <div class="modal-footer">
@@ -530,25 +535,25 @@ let tempPhotoData = null;
 
 // Sowing and Transplanting marked with *
 const dateKeys = [
-    { id: 'sowing', label: 'Sowing *', type: 'base' },
-    { id: 'tp', label: 'Transplanting *', type: 'base' },
-    { id: 'p_start', label: 'Pitan Start', type: 'pitan' },
-    { id: 'p_end', label: 'Pitan End', type: 'pitan' },
-    { id: 'md_start', label: 'MD Start', type: 'md' },
-    { id: 'pi_check_start', label: 'Panicle Init. Check', type: 'md' },
-    { id: 'md_end', label: 'MD End', type: 'md' },
-    { id: 'pi_flood_start', label: 'Flooding start (PI)', type: 'pi' },
-    { id: 'pi_flood_end', label: 'Flooding end', type: 'pi' },
-    { id: 'f3d1', label: '3F4D_1 (Start)', type: 'f3d' },
-    { id: 'f3d2', label: '3F4D_2', type: 'f3d' },
-    { id: 'f3d3', label: '3F4D_3', type: 'f3d' },
-    { id: 'heading', label: 'Heading', type: 'heading' },
-    { id: 'f3d4', label: '3F4D_4', type: 'f3d' },
-    { id: 'f3d5', label: '3F4D_5', type: 'f3d' },
-    { id: 'f3d6', label: '3F4D_6', type: 'f3d' },
-    { id: 'f3d_end', label: '3F4D End', type: 'f3d' },
-    { id: 'last_irr', label: 'Last Irrigation', type: 'base' },
-    { id: 'harvest', label: 'Harvesting', type: 'base' }
+    { id: 'sowing', type: 'base' },
+    { id: 'tp', type: 'base' },
+    { id: 'p_start', type: 'pitan' },
+    { id: 'p_end', type: 'pitan' },
+    { id: 'md_start', type: 'md' },
+    { id: 'pi_check_start', type: 'md' },
+    { id: 'md_end', type: 'md' },
+    { id: 'pi_flood_start', type: 'pi' },
+    { id: 'pi_flood_end', type: 'pi' },
+    { id: 'f3d1', type: 'f3d' },
+    { id: 'f3d2', type: 'f3d' },
+    { id: 'f3d3', type: 'f3d' },
+    { id: 'heading', type: 'heading' },
+    { id: 'f3d4', type: 'f3d' },
+    { id: 'f3d5', type: 'f3d' },
+    { id: 'f3d6', type: 'f3d' },
+    { id: 'f3d_end', type: 'f3d' },
+    { id: 'last_irr', type: 'base' },
+    { id: 'harvest', type: 'base' }
 ];
 
 // --- Slide View Settings (Updated for slide_en_water.png) ---
@@ -578,8 +583,9 @@ function initInputs() {
 
 function loadActiveFarmer() {
     const f = farmers[activeIdx];
-    // Init completed/photos array if missing
+    // Init arrays if missing
     if(!f.completed) f.completed = [];
+    if(!f.memos) f.memos = {};
     if(!f.photos) f.photos = {};
 
     // Load Settings
@@ -605,7 +611,7 @@ function getBengaliDate(gregorianDateStr) {
     const date = new Date(gregorianDateStr);
     
     // Approximate Bengali Calendar (Adjusted for Bangladesh)
-    const bengaliMonths = ["Boishakh", "Joishtho", "Ashar", "Srabon", "Bhadro", "Ashshin", "Kartik", "Ogrohayon", "Poush", "Magh", "Falgun", "Chaitra"];
+    const bengaliMonths = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাগুন", "চৈত্র"];
     const daysInMonth = [31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30];
     
     // Check for leap year for Falgun (index 10)
@@ -812,7 +818,7 @@ function refreshViews() {
         const hasMemo = f.memos && f.memos[date];
         const hasPhoto = f.photos && f.photos[date];
         
-        // Event for Calendar
+        // Event for Calendar (Add Camera icon if photo exists)
         if(hasMemo) events.push({ title: "📝", start: date, color: '#ffc107', textColor: '#000' });
         if(hasPhoto) events.push({ title: "📷", start: date, color: '#17a2b8', textColor: '#fff' });
 
@@ -940,17 +946,17 @@ function handleDateClick(info) {
     const date = info.dateStr;
     document.getElementById('memoDate').value = date;
     document.getElementById('memoDateDisplay').innerText = date;
-    document.getElementById('memoInput').value = f.memos[date] || "";
+    document.getElementById('memoInput').value = (f.memos && f.memos[date]) ? f.memos[date] : "";
     
-    // Reset photo
-    document.getElementById('photoInput').value = "";
+    // Reset photo UI
+    clearPhotoUI();
+    document.getElementById('photoInput').value = ""; // Clear file input
     tempPhotoData = null;
+
     if(f.photos && f.photos[date]) {
         tempPhotoData = f.photos[date];
         showPreview(tempPhotoData);
-    } else {
-        clearPhotoUI();
-    }
+    } 
 
     memoModal.show();
 }
@@ -959,7 +965,7 @@ function previewPhoto(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            // Compress Image
+            // Compress Image via Canvas
             const img = new Image();
             img.src = e.target.result;
             img.onload = () => {
@@ -970,7 +976,7 @@ function previewPhoto(input) {
                 canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                tempPhotoData = canvas.toDataURL('image/jpeg', 0.6);
+                tempPhotoData = canvas.toDataURL('image/jpeg', 0.6); // Quality 0.6
                 showPreview(tempPhotoData);
             }
         }
@@ -998,11 +1004,16 @@ function saveMemo() {
     const f = farmers[activeIdx];
     const date = document.getElementById('memoDate').value;
     const text = document.getElementById('memoInput').value;
+    
+    // Ensure objects exist
+    if(!f.memos) f.memos = {};
+    if(!f.photos) f.photos = {};
 
+    // Save Text
     if (text === "") delete f.memos[date];
     else f.memos[date] = text;
 
-    if (!f.photos) f.photos = {};
+    // Save Photo
     if (tempPhotoData) {
         try {
             f.photos[date] = tempPhotoData;
@@ -1071,8 +1082,14 @@ function confirmResetAll() { if(confirm("⚠️ CAUTION: Delete ALL farmers and 
 function exportToExcel() {
     const f = farmers[activeIdx];
     let csv = "\uFEFFCategory,Event,Date\n";
-    Object.keys(f.memos).forEach(d => csv += `"Note","${f.memos[d]}","${d}"\n`);
-    dateKeys.forEach(k => { if(f.dates[k.id]) csv += `"Schedule","${k.label}","${f.dates[k.id]}"\n`; });
+    // Fix: Check if f.memos exists
+    if(f.memos) {
+        Object.keys(f.memos).forEach(d => csv += `"Note","${f.memos[d]}","${d}"\n`);
+    }
+    dateKeys.forEach(k => { 
+        // Fix: Use t(k.id) instead of k.label since label was removed
+        if(f.dates[k.id]) csv += `"Schedule","${t(k.id)}","${f.dates[k.id]}"\n`; 
+    });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `3F4D_Pro_${f.name}.csv`; a.click();
 }
