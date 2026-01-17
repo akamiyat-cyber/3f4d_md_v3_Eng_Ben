@@ -611,7 +611,7 @@ function getBengaliDate(gregorianDateStr) {
     const date = new Date(gregorianDateStr);
     
     // Approximate Bengali Calendar (Adjusted for Bangladesh)
-    const bengaliMonths = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাগুন", "চৈত্র"];
+    const bengaliMonths = ["Boishakh", "Joishtho", "Ashar", "Srabon", "Bhadro", "Ashshin", "Kartik", "Ogrohayon", "Poush", "Magh", "Falgun", "Chaitra"];
     const daysInMonth = [31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30];
     
     // Check for leap year for Falgun (index 10)
@@ -654,11 +654,15 @@ function recalculate(triggerId) {
     });
     
     const setV = (id, date) => { 
-        if (triggerId === 'all' || !f.manualKeys.includes(id)) { 
+        // Modified Logic: If ID is manual, DO NOT update from logic even if triggerId is 'all'
+        // This prevents overwriting manual entries during language switch or load
+        if (!f.manualKeys.includes(id)) { 
             const el = document.getElementById('date_'+id); 
-            if(!isNaN(date)) { // Check for valid date
-                el.valueAsDate = date; 
-                f.dates[id] = el.value; 
+            if(!isNaN(date)) { 
+                // Fix: Use String format to avoid Timezone issues (1 day shift)
+                const dateStr = formatDateISO(date);
+                el.value = dateStr; 
+                f.dates[id] = dateStr; 
             }
         } 
     };
@@ -1082,12 +1086,10 @@ function confirmResetAll() { if(confirm("⚠️ CAUTION: Delete ALL farmers and 
 function exportToExcel() {
     const f = farmers[activeIdx];
     let csv = "\uFEFFCategory,Event,Date\n";
-    // Fix: Check if f.memos exists
     if(f.memos) {
         Object.keys(f.memos).forEach(d => csv += `"Note","${f.memos[d]}","${d}"\n`);
     }
     dateKeys.forEach(k => { 
-        // Fix: Use t(k.id) instead of k.label since label was removed
         if(f.dates[k.id]) csv += `"Schedule","${t(k.id)}","${f.dates[k.id]}"\n`; 
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
