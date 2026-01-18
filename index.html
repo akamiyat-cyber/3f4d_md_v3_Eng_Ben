@@ -66,6 +66,9 @@
 
         .yp-toggle-container { border: 2px solid var(--border-pi); border-radius: 8px; padding: 10px; background-color: #fffdf5; margin: 10px 0; }
         #calendar { background: white; padding: 10px; border-radius: 12px; min-height: 450px; }
+        .fc-daygrid-day-number { font-weight: bold; }
+        .ben-cal-date { font-size: 0.65rem; color: #d63384; font-weight: normal; margin-top: 1px; display: block; line-height: 1; }
+        
         .memo-list-item { border-left: 5px solid #ffc107; background: #fff; padding: 12px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .memo-img-preview { max-width: 100px; max-height: 100px; display: block; margin-top: 5px; border-radius: 4px; border: 1px solid #ddd; cursor: pointer; }
 
@@ -140,6 +143,24 @@
                 <option value="en">English</option>
                 <option value="bn">বাংলা</option>
             </select>
+
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    ⚙️
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><h6 class="dropdown-header">Backup & Export</h6></li>
+                    <li><button class="dropdown-item" onclick="exportJSON('all')">📥 Backup All (Full JSON)</button></li>
+                    <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Export Current (Share JSON)</button></li>
+                    <li><button class="dropdown-item" onclick="document.getElementById('importFile').click()">📤 Import JSON</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><button class="dropdown-item fw-bold text-danger" onclick="exportPDF()">📄 Export PDF Report</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header text-danger">Advanced</h6></li>
+                    <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All)</button></li>
+                </ul>
+                <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importJSON(this)">
+            </div>
         </div>
     </div>
     
@@ -149,24 +170,8 @@
         </div>
         
         <div class="d-flex gap-2 mt-2 flex-wrap justify-content-center">
-            <button class="btn btn-xs btn-outline-danger py-0 px-2 btn-label-resetall" onclick="confirmResetAll()" style="font-size: 10px;">Hard Reset</button>
             <button class="btn btn-sm btn-outline-secondary py-0 px-2 btn-label-rename" onclick="renameFarmer()" style="font-size: 10px;">Rename farmer</button>
             <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-label-delete" onclick="deleteFarmer()" style="font-size: 10px;">Delete farmer</button>
-        </div>
-        <div class="d-flex gap-2 mt-2 align-items-center flex-wrap justify-content-center">
-            <div class="btn-group btn-group-sm">
-                <button type="button" class="btn btn-outline-dark" style="font-size: 10px;" data-bs-toggle="dropdown" aria-expanded="false">
-                    📥 Backup (JSON)
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="exportJSON('all')">Backup All (Full)</a></li>
-                    <li><a class="dropdown-item" href="#" onclick="exportJSON('current')">Export Current (Share)</a></li>
-                </ul>
-            </div>
-            <button class="btn btn-sm btn-outline-success py-0 px-2" onclick="document.getElementById('importFile').click()" style="font-size: 10px;">📤 Import JSON</button>
-            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importJSON(this)">
-            
-            <button class="btn btn-sm btn-danger fw-bold py-0 px-2" onclick="exportPDF()" style="font-size: 10px;">📄 Export PDF</button>
         </div>
     </div>
 </div>
@@ -319,8 +324,8 @@
                                     <tr><td>出穂日</td><td>Heading</td><td>শীষ আসা</td><td>Heading + Heading day after sowing</td><td>শীষ আসা + বীজ বপনের পর শীষ আসার দিন</td></tr>
                                     <tr><td>3F4D　4サイクル目</td><td>3F4D_4</td><td>৩এফ৪ডি_৪</td><td>3F4D_3 (Start) + 7</td><td>৩এফ৪ডি_３ +７ দিন</td></tr>
                                     <tr><td>3F4D　5サイクル目</td><td>3F4D_5</td><td>৩এফ৪ডি_৫</td><td>3F4D_4 (Start) + 7</td><td>৩এফ৪ডি_４ + ７ দিন</td></tr>
-                                    <tr><td>3F4D　6サイクル目</td><td>3F4D_6</td><td>৩এফ৪ডি_৬</td><td>3F4D_5 (Start) + 7</td><td>৩এফ৪ডি_５ + ７ দিন</td></tr>
-                                    <tr><td>3F4D　終了</td><td>3F4D End</td><td>৩এফ৪ডি শেষ</td><td>3F4D_6 + 7</td><td>৩এফ৪ডি_６ + ৭ দিন</td></tr>
+                                    <tr><td>3F4D　6サイクル目</td><td>3F4D_6</td><td>৩এফ৪ডি_৬</td><td>3F4D_5 (Start) + 7</td><td>৩এফ৪ডি_৫ + ７ দিন</td></tr>
+                                    <tr><td>3F4D　終了</td><td>3F4D End</td><td>৩এফ৪ডি শেষ</td><td>3F4D_6 + 7</td><td>৩এফ৪ডি_৬ + ৭ দিন</td></tr>
                                     <tr><td>最終灌漑</td><td>Last Irrigation</td><td>শেষ সেচ</td><td>3F4D End + 1</td><td>৩এফ৪ডি শেষ + ১ দিন</td></tr>
                                     <tr><td>収穫</td><td>Harvesting</td><td>ফসল কাটা</td><td>Heading + Harvest after heading</td><td>শীষ আসা + শীষ আসার পর ফসল কাটা</td></tr>
                                 </tbody>
@@ -367,8 +372,15 @@
                     <div class="card p-3">
                         <h6 class="fw-bold text-secondary mb-3 tab-lbl-graph">Irrigation Time Graph</h6>
                         <div class="d-flex justify-content-end gap-2 mb-2">
-                            <button class="btn btn-sm btn-outline-success btn-export-csv" onclick="exportIrrigationCSV()">Export CSV</button>
-                            <button class="btn btn-sm btn-outline-danger btn-export-pdf" onclick="exportIrrigationPDF()">Export Graph PDF</button>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Share
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><button class="dropdown-item" onclick="exportIrrigationCSV()">CSV</button></li>
+                                    <li><button class="dropdown-item" onclick="exportIrrigationPDF()">PDF</button></li>
+                                </ul>
+                            </div>
                         </div>
                         <canvas id="irrigationChart" style="width:100%; max-height:400px;"></canvas>
                     </div>
@@ -381,7 +393,6 @@
                         <div class="map-controls">
                             <button class="btn btn-sm btn-outline-secondary" onclick="zoomMap(0.1)">🔎 +</button>
                             <button class="btn btn-sm btn-outline-secondary" onclick="zoomMap(-0.1)">🔎 -</button>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="resetMap()">Reset</button>
                             <button class="btn btn-sm btn-primary" onclick="downloadMap()">Download Map (Image)</button>
                         </div>
 
@@ -573,7 +584,7 @@ const TRANSLATIONS = {
         tab_memos: "নোট লগ",
         tab_graph: "সেচের সময়",
         // Table Headers
-        th_event: "ইভেন্ট",
+        th_event: "イভেন্ট",
         th_date: "তারিখ / নির্দেশক",
         th_done: "সম্পন্ন",
         // Labels
@@ -683,14 +694,11 @@ function changeLanguage(lang) {
     document.querySelector('.tab-lbl-memos').innerText = t('tab_memos');
     document.querySelector('.tab-lbl-graph').innerText = t('tab_graph');
     document.querySelector('.lbl-irrigation-time').innerText = t('lbl_irr_time');
-    document.querySelector('.btn-export-csv').innerText = t('btn_export_csv');
-    document.querySelector('.btn-export-pdf').innerText = t('btn_export_pdf');
 
     document.querySelector('.th-event').innerText = t('th_event');
     document.querySelector('.th-date').innerText = t('th_date');
     document.querySelector('.th-done').innerText = t('th_done');
 
-    document.querySelector('.btn-label-resetall').innerText = t('hard_reset');
     document.querySelector('.btn-label-rename').innerText = t('rename');
     document.querySelector('.btn-label-delete').innerText = t('delete');
     document.querySelector('.btn-label-resetfarmer').innerText = t('reset_farmer');
@@ -894,7 +902,8 @@ function getGPS() {
     }
 }
 
-function getBengaliDate(gregorianDateStr) {
+// 1. Bengali Date logic for Calendar
+function getBengaliDate(gregorianDateStr, forceBengali = false) {
     if(!gregorianDateStr) return "";
     const date = new Date(gregorianDateStr);
     const bengaliMonthsEn = ["Boishakh", "Joishtho", "Ashar", "Srabon", "Bhadro", "Ashshin", "Kartik", "Ogrohayon", "Poush", "Magh", "Falgun", "Chaitra"];
@@ -913,7 +922,7 @@ function getBengaliDate(gregorianDateStr) {
         currentMonth++;
     }
     const benDay = dayOfYear + 1;
-    if (currentLang === 'bn') {
+    if (currentLang === 'bn' || forceBengali) {
         const benMonth = bengaliMonthsBn[currentMonth];
         const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
         return `${benDayStr} ${benMonth}`;
@@ -1370,13 +1379,45 @@ async function confirmResetAll() {
     } 
 }
 
+// 2. Unified Share/Download Logic for Mobile
+async function shareOrDownload(blob, fileName) {
+    const file = new File([blob], fileName, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], title: fileName });
+        } catch (err) {
+            downloadFallback(blob, fileName);
+        }
+    } else {
+        downloadFallback(blob, fileName);
+    }
+}
+
+function downloadFallback(blob, fileName) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = fileName;
+    a.click();
+}
+
 function exportToExcel() {
     const f = farmers[activeIdx];
-    let csv = "\uFEFFCategory,Event,Date\n";
+    const todayStr = new Date().toISOString().slice(0,10);
+    const fileName = `${f.name}_${todayStr}_Schedule.csv`;
+
+    // 3. Header with Profile
+    let csv = "\uFEFF0. Field Profile\n";
+    csv += `Farmer Name,${f.name}\n`;
+    csv += `Rice Variety,${f.variety || ""}\n`;
+    csv += `Field Size,${f.fieldSize || ""} ${f.fieldSizeUnit || ""}\n`;
+    csv += `GPS Coordinates,"${f.coordinates || ""}"\n\n`;
+    
+    csv += "Category,Event,Date\n";
     if(f.memos) Object.keys(f.memos).forEach(d => csv += `"Note","${f.memos[d]}","${d}"\n`);
     dateKeys.forEach(k => { if(f.dates[k.id]) csv += `"Schedule","${t(k.id)}","${f.dates[k.id]}"\n`; });
+    
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `3F4D_Pro_${f.name}.csv`; a.click();
+    shareOrDownload(blob, fileName);
 }
 
 function toggleComplete(id) {
@@ -1442,20 +1483,23 @@ function renderIrrigationGraph() {
     });
 }
 
-// --- New Features (Backup, Map, PDF, Notification, Graph Export) ---
+// --- Backup & Export ---
 
 function exportJSON(scope) {
     let dataToExport;
-    let fileName;
+    const f = farmers[activeIdx];
+    const todayStr = new Date().toISOString().slice(0,10);
+    let fileName = "";
+
     if (scope === 'all') {
         dataToExport = farmers;
-        fileName = `3F4D_AllBackup_${new Date().toISOString().slice(0,10)}.json`;
+        fileName = `3F4D_FullBackup_${todayStr}.json`;
     } else {
-        dataToExport = farmers[activeIdx];
-        fileName = `3F4D_Farmer_${farmers[activeIdx].name}.json`;
+        dataToExport = f;
+        fileName = `${f.name}_${todayStr}_ShareData.json`;
     }
     const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: "application/json" });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName; a.click();
+    shareOrDownload(blob, fileName);
 }
 
 function importJSON(input) {
@@ -1497,19 +1541,16 @@ function zoomMap(delta) {
     if (currentScale > 3.0) currentScale = 3.0;
     wrapper.style.transform = `scale(${currentScale})`;
 }
-function resetMap() {
-    currentScale = 1;
-    document.getElementById('slide_wrapper').style.transform = `scale(1)`;
-}
+
 function downloadMap() {
     const wrapper = document.getElementById('slide_wrapper');
     const originalTransform = wrapper.style.transform;
+    const todayStr = new Date().toISOString().slice(0,10);
     wrapper.style.transform = "scale(1)";
     html2canvas(wrapper).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `Map_${farmers[activeIdx].name}.png`;
-        link.href = canvas.toDataURL();
-        link.click();
+        canvas.toBlob(blob => {
+            shareOrDownload(blob, `Map_${farmers[activeIdx].name}_${todayStr}.png`);
+        });
         wrapper.style.transform = originalTransform;
     });
 }
@@ -1553,8 +1594,8 @@ function exportPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     const f = farmers[activeIdx];
+    const todayStr = new Date().toISOString().slice(0,10);
     
-    // Fix: Ensure the slide tab is visible temporarily for html2canvas
     const slideTab = document.getElementById('tab-slide');
     const wasHidden = slideTab.classList.contains('fade') && !slideTab.classList.contains('show');
     if(wasHidden) {
@@ -1592,10 +1633,9 @@ function exportPDF() {
         doc.text("Irrigation Map", 10, 10);
         doc.addImage(imgData, 'PNG', 10, 20, pdfWidth, pdfHeight);
         
-        doc.save(`3F4D_Report_${f.name}.pdf`);
+        doc.save(`${f.name}_${todayStr}_Report.pdf`);
         wrapper.style.transform = originalTransform;
         
-        // Restore tab visibility
         if(wasHidden) {
             slideTab.classList.remove('show', 'active');
             slideTab.style.display = '';
@@ -1605,13 +1645,25 @@ function exportPDF() {
 
 function exportIrrigationCSV() {
     const f = farmers[activeIdx];
+    const todayStr = new Date().toISOString().slice(0,10);
+    const fileName = `${f.name}_${todayStr}_IrrigationTime.csv`;
+
     if (!f.irrigation) return alert("No irrigation data.");
-    let csv = "\uFEFFDate,Value,Unit\n";
+
+    // 3. Header with Profile
+    let csv = "\uFEFF0. Field Profile\n";
+    csv += `Farmer Name,${f.name}\n`;
+    csv += `Rice Variety,${f.variety || ""}\n`;
+    csv += `Field Size,${f.fieldSize || ""} ${f.fieldSizeUnit || ""}\n`;
+    csv += `GPS Coordinates,"${f.coordinates || ""}"\n\n`;
+
+    csv += "Date,Value,Unit\n";
     Object.keys(f.irrigation).sort().forEach(d => {
         csv += `${d},${f.irrigation[d].value},${f.irrigation[d].unit}\n`;
     });
+    
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `Irrigation_${f.name}.csv`; a.click();
+    shareOrDownload(blob, fileName);
 }
 
 function exportIrrigationPDF() {
@@ -1619,13 +1671,14 @@ function exportIrrigationPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('landscape');
     const f = farmers[activeIdx];
+    const todayStr = new Date().toISOString().slice(0,10);
     
     doc.setFontSize(16);
     doc.text(`Irrigation Graph: ${f.name}`, 10, 10);
     
     const imgData = irrigationChart.toBase64Image();
     doc.addImage(imgData, 'PNG', 10, 20, 280, 150);
-    doc.save(`Irrigation_Graph_${f.name}.pdf`);
+    doc.save(`${f.name}_${todayStr}_IrrigationGraph.pdf`);
 }
 
 function checkNotifications() {
@@ -1655,7 +1708,15 @@ document.addEventListener('DOMContentLoaded', () => {
         initialView: 'dayGridMonth', 
         headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
         height: 'auto', 
-        dateClick: handleDateClick 
+        dateClick: handleDateClick,
+        // 1. Bengali Date in Calendar
+        dayCellContent: function(arg) {
+            const gregDay = arg.date.getDate();
+            const benDateStr = getBengaliDate(formatDateISO(arg.date), true);
+            return {
+                html: `${gregDay}<br><span class="ben-cal-date">${benDateStr}</span>`
+            };
+        }
     });
     calendar.render(); 
     
