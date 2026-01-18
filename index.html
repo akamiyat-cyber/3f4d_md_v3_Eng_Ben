@@ -584,7 +584,7 @@ const TRANSLATIONS = {
         tab_memos: "নোট লগ",
         tab_graph: "সেচের সময়",
         // Table Headers
-        th_event: "イভেন্ট",
+        th_event: "ইভেন্ট",
         th_date: "তারিখ / নির্দেশক",
         th_done: "সম্পন্ন",
         // Labels
@@ -902,7 +902,6 @@ function getGPS() {
     }
 }
 
-// 1. Bengali Date logic for Calendar
 function getBengaliDate(gregorianDateStr, forceBengali = false) {
     if(!gregorianDateStr) return "";
     const date = new Date(gregorianDateStr);
@@ -924,7 +923,7 @@ function getBengaliDate(gregorianDateStr, forceBengali = false) {
     const benDay = dayOfYear + 1;
     if (currentLang === 'bn' || forceBengali) {
         const benMonth = bengaliMonthsBn[currentMonth];
-        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬৭八৯"[d]);
         return `${benDayStr} ${benMonth}`;
     } else {
         const benMonth = bengaliMonthsEn[currentMonth];
@@ -1379,7 +1378,6 @@ async function confirmResetAll() {
     } 
 }
 
-// 2. Unified Share/Download Logic for Mobile
 async function shareOrDownload(blob, fileName) {
     const file = new File([blob], fileName, { type: blob.type });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1405,7 +1403,6 @@ function exportToExcel() {
     const todayStr = new Date().toISOString().slice(0,10);
     const fileName = `${f.name}_${todayStr}_Schedule.csv`;
 
-    // 3. Header with Profile
     let csv = "\uFEFF0. Field Profile\n";
     csv += `Farmer Name,${f.name}\n`;
     csv += `Rice Variety,${f.variety || ""}\n`;
@@ -1429,7 +1426,6 @@ function toggleComplete(id) {
     recalculate('all');
 }
 
-// --- Irrigation Chart ---
 function renderIrrigationGraph() {
     const ctx = document.getElementById('irrigationChart').getContext('2d');
     const f = farmers[activeIdx];
@@ -1482,8 +1478,6 @@ function renderIrrigationGraph() {
         }
     });
 }
-
-// --- Backup & Export ---
 
 function exportJSON(scope) {
     let dataToExport;
@@ -1555,7 +1549,6 @@ function downloadMap() {
     });
 }
 
-// Pinch Zoom Logic
 const mapContainer = document.getElementById('slide_wrapper');
 let initialPinchDist = 0;
 let initialPinchScale = 1;
@@ -1650,7 +1643,6 @@ function exportIrrigationCSV() {
 
     if (!f.irrigation) return alert("No irrigation data.");
 
-    // 3. Header with Profile
     let csv = "\uFEFF0. Field Profile\n";
     csv += `Farmer Name,${f.name}\n`;
     csv += `Rice Variety,${f.variety || ""}\n`;
@@ -1681,16 +1673,35 @@ function exportIrrigationPDF() {
     doc.save(`${f.name}_${todayStr}_IrrigationGraph.pdf`);
 }
 
+// 2. Automated Notification Logic for "Today"
 function checkNotifications() {
     if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") Notification.requestPermission();
-    else {
+    if (Notification.permission !== "granted") {
+        Notification.requestPermission();
+    } else {
         const f = farmers[activeIdx];
         if(!f) return;
+        
         const today = new Date();
+        const todayStr = formatDateISO(today);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const tomorrowStr = formatDateISO(tomorrow);
+        
+        // Check for Today's events
+        dateKeys.forEach(k => {
+            if(f.dates[k.id] === todayStr) {
+                const eventLabel = t(k.id);
+                const msg = currentLang === 'bn' 
+                    ? `আজ ${eventLabel}` 
+                    : `Today is ${eventLabel}`;
+                
+                new Notification("3F4D Notification", { body: msg, icon: 'icon.png' });
+                alert(msg);
+            }
+        });
+
+        // Check for Tomorrow's events (Existing feature)
         let eventFound = false;
         dateKeys.forEach(k => { if(f.dates[k.id] === tomorrowStr) eventFound = true; });
         if(eventFound) new Notification(t('notif_title'), { body: t('notif_msg'), icon: 'icon.png' });
@@ -1709,7 +1720,6 @@ document.addEventListener('DOMContentLoaded', () => {
         headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
         height: 'auto', 
         dateClick: handleDateClick,
-        // 1. Bengali Date in Calendar
         dayCellContent: function(arg) {
             const gregDay = arg.date.getDate();
             const benDateStr = getBengaliDate(formatDateISO(arg.date), true);
