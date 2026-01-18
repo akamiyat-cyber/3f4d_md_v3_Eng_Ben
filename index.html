@@ -1231,8 +1231,8 @@ function refreshViews() {
             const benDate = getBengaliDate(val);
             events.push({ title: `${t(k.id)} (${benDate})`, start: val, allDay: true, color: { pitan:'#28a745', md:'#e2b709', pi:'#ffe066', f3d:'#007bff', heading:'#6b46c1', base:'#718096' }[k.type] });
             if (k.id.startsWith('f3d') && k.id !== 'f3d_end') {
-                events.push({ title: `3F4D Flood`, start: val, end: formatDateISO(addDays(new Date(val), 3)), color: '#0056b3', allDay: true });
-                events.push({ title: `3F4D Drain`, start: formatDateISO(addDays(new Date(val), 3)), end: formatDateISO(addDays(new Date(val), 7)), color: '#adb5bd', allDay: true });
+                events.push({ title: `3F4D Flood ৩এফ৪ডি প্লাবন`, start: val, end: formatDateISO(addDays(new Date(val), 3)), color: '#0056b3', allDay: true });
+                events.push({ title: `3F4D Drain ৩এফ৪ডি নিকাশ`, start: formatDateISO(addDays(new Date(val), 3)), end: formatDateISO(addDays(new Date(val), 7)), color: '#adb5bd', allDay: true });
             }
             let rowClass = `row-${k.type}`;
             let warningText = "";
