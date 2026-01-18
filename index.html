@@ -185,10 +185,10 @@
         </h5>
         
         <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-primary" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules</button>
+            <button class="btn btn-sm btn-outline-primary" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules সকল সময়সূচী</button>
 
             <a href="https://www.accuweather.com/en/bd/bangladesh-weather" target="_blank" class="btn btn-sm btn-outline-info text-decoration-none" title="Weather Forecast">
-                ⛅ Weather
+                ⛅ Weather আবহাওয়া
             </a>
             
             <select id="lang-selector" class="form-select form-select-sm" style="width: auto;" onchange="changeLanguage(this.value)">
@@ -201,16 +201,16 @@
                     ⚙️
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li><h6 class="dropdown-header">Backup & Export</h6></li>
-                    <li><button class="dropdown-item" onclick="exportJSON('all')">📥 Backup All (Full JSON)</button></li>
-                    <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Export Current (Share JSON)</button></li>
-                    <li><button class="dropdown-item" onclick="document.getElementById('importFile').click()">📤 Import JSON</button></li>
+                    <li><h6 class="dropdown-header">Backup & Export　ব্যাকআপ এবং এক্সপোর্ট</h6></li>
+                    <li><button class="dropdown-item" onclick="exportJSON('all')">📥 Backup All (JSON) সব ব্যাকআপ</button></li>
+                    <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Backup Current (JSON) বর্তমান ব্যাকআপ</button></li>
+                    <li><button class="dropdown-item" onclick="document.getElementById('importFile').click()">📤 Import JSON ইমপোর্ট করুন </button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><button class="dropdown-item fw-bold text-danger" onclick="exportPDF()">📄 Export PDF Report</button></li>
-                    <li><button class="dropdown-item fw-bold text-primary" onclick="exportCalendarPDF()">📅 Export Calendar PDF (Landscape)</button></li>
+                    <li><button class="dropdown-item fw-bold text-danger" onclick="exportPDF()">📄 Export PDF Report PDF রিপোর্ট এক্সপোর্ট করুন</button></li>
+                    <li><button class="dropdown-item fw-bold text-primary" onclick="exportCalendarPDF()">📅 Export Calendar PDF ক্যালেন্ডার PDF এক্সপোর্ট করুন</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header text-danger">Advanced</h6></li>
-                    <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All)</button></li>
+                    <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All) হার্ড রিসেট (সব মুছে ফেলুন)</button></li>
                 </ul>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importJSON(this)">
             </div>
