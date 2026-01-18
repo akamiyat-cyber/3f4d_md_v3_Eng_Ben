@@ -155,6 +155,7 @@
                     <li><button class="dropdown-item" onclick="document.getElementById('importFile').click()">📤 Import JSON</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><button class="dropdown-item fw-bold text-danger" onclick="exportPDF()">📄 Export PDF Report</button></li>
+                    <li><button class="dropdown-item fw-bold text-primary" onclick="exportCalendarPDF()">📅 Export Calendar PDF (Landscape)</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header text-danger">Advanced</h6></li>
                     <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All)</button></li>
@@ -186,6 +187,10 @@
                         <div class="col-12">
                             <label class="small fw-bold lbl-name">Farmer Name</label>
                             <input type="text" id="prof_name" class="form-control form-control-sm" onchange="updateProfile()">
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold lbl-village">Village Name</label>
+                            <input type="text" id="prof_village" class="form-control form-control-sm" onchange="updateProfile()">
                         </div>
                         <div class="col-12">
                             <label class="small fw-bold lbl-variety">Rice Variety</label>
@@ -316,7 +321,7 @@
                                     <tr><td>中干し開始</td><td>MD Start</td><td>এমডি শুরু</td><td>Sowing + MD End</td><td>বপন + বীজ বপনের পর এমডি শুরু</td></tr>
                                     <tr><td>幼穂形成確認開始</td><td>Panicle Initiation Check start</td><td>শীষ আসার পরীক্ষা শুরু</td><td>MD start + Panicle Initiation check (day after MD Start)</td><td>এমডি শুরু + শীষ আসার পরীক্ষা (এমডি শুরুর পরের দিন)</td></tr>
                                     <tr><td>中干し終了</td><td>MD End</td><td>এমডি শেষ</td><td>MD Start + MD Duration</td><td>এমডি শুরু + এমডি সময়কাল</td></tr>
-                                    <tr><td>中干し後灌漑開始</td><td>Flooding start (Panicle initiation)</td><td>প্লাবন শুরু (শীষ আসার সময়)</td><td>Heading - Flooding during panicle initiation before heading. ただし、Manual Young Panicle (1-2mm)に入力があればその値を用いる。</td><td>শীষ আসা - (শীষ আসার সময় প্লাবন সময়কাল) তবে, ম্যানুয়াল কচি শীষ (১-২ মিমি) এ ইনপুট থাকলে সেই মান ব্যবহার করা হবে।</td></tr>
+                                    <tr><td>中干し後灌漑開始</td><td>Flooding start (Panicle initiation)</td><td>প্লাবন শুরু (শীষ আসার সময়)</td><td>Heading - Flooding during panicle initiation before heading. ただし、Manual Young Panicle (1-2mm)に入力があればその値を用いる。</td><td>শীষ আসা - (শীষ আসার সময় প্লাবন সময়কাল) তবে, ম্যানুয়াল কচি শীষ (১-২ মিমি) 에 ইনপুট থাকলে সেই মান ব্যবহার করা হবে।</td></tr>
                                     <tr><td>中干し最後の灌漑</td><td>Flooding end</td><td>প্লাবন শেষ</td><td>Flooding Start (Panicle initiation) - (Flooding during panicle initiation before heading  - 3F4D start before heading)</td><td>প্লাবন শুরু - (শীষ আসার সময় প্লাবন - ৩এফ৪ডি শুরু)</td></tr>
                                     <tr><td>3F4D　1サイクル目</td><td>3F4D_1 (Start)</td><td>৩এফ৪ডি_১ (শুরু)</td><td>Flooding end</td><td>প্লাবন শেষ</td></tr>
                                     <tr><td>3F4D　2サイクル目</td><td>3F4D_2</td><td>৩এফ৪ডি_২</td><td>3F4D_1 (Start) + 7</td><td>৩এফ৪ডি_১ + ৭ দিন</td></tr>
@@ -490,7 +495,8 @@ const DEFAULT_SETTINGS = {
 const CONVERSION_RATES = {
     ha: 1,
     a: 0.01,
-    bigha: 0.1335 // Approx 1 Bigha = 0.1335 ha (33 decimals)
+    bigha: 0.1335,
+    decimal: 0.004047
 };
 
 // --- Translations ---
@@ -549,6 +555,7 @@ const TRANSLATIONS = {
         // Profile
         lbl_profile: "0. Field Profile",
         lbl_name: "Farmer Name",
+        lbl_village: "Village Name",
         lbl_variety: "Rice Variety",
         lbl_size: "Field Size",
         lbl_coords: "GPS Coordinates",
@@ -621,6 +628,7 @@ const TRANSLATIONS = {
         // Profile
         lbl_profile: "০. জমির প্রোফাইল",
         lbl_name: "কৃষকের নাম",
+        lbl_village: "গ্রামের নাম",
         lbl_variety: "ধানের জাত",
         lbl_size: "জমির আয়তন",
         lbl_coords: "GPS স্থানাঙ্ক",
@@ -648,7 +656,6 @@ function t(key) {
 }
 
 function changeLanguage(lang) {
-    // Auto-convert Field Size before switching
     const sizeInput = document.getElementById('prof_size');
     const unitInput = document.getElementById('prof_size_unit');
     let currentVal = parseFloat(sizeInput.value);
@@ -658,27 +665,22 @@ function changeLanguage(lang) {
     localStorage.setItem('f3d_lang', lang);
     document.getElementById('lang-selector').value = lang;
     
-    // Convert Value logic
     if (!isNaN(currentVal)) {
         let valInHa = currentVal;
-        // Normalize to ha
         if (currentUnit === 'a') valInHa = currentVal * CONVERSION_RATES.a;
         else if (currentUnit === 'bigha') valInHa = currentVal * CONVERSION_RATES.bigha;
+        else if (currentUnit === 'decimal') valInHa = currentVal * CONVERSION_RATES.decimal;
         
-        // Convert to target default
         let targetUnit = lang === 'bn' ? 'bigha' : 'ha';
         let newVal = valInHa;
         if (targetUnit === 'bigha') newVal = valInHa / CONVERSION_RATES.bigha;
-        // ha is 1, so no change needed if target is ha
         
-        // Update values internally (will be set to DOM after options update)
         if(farmers[activeIdx]) {
             farmers[activeIdx].fieldSize = parseFloat(newVal.toFixed(2));
             farmers[activeIdx].fieldSizeUnit = targetUnit;
         }
     }
 
-    // Update Static UI
     const staticIds = {
         'hdr-settings': 'basic_settings', 'hdr-dates': 'date_settings', 'hdr-logic': 'logic_config',
         'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps'
@@ -704,18 +706,16 @@ function changeLanguage(lang) {
     document.querySelector('.btn-label-resetfarmer').innerText = t('reset_farmer');
     document.querySelector('.btn-label-csv').innerText = t('export_csv');
 
-    // Profile Labels
     document.querySelector('.lbl-name').innerText = t('lbl_name');
+    document.querySelector('.lbl-village').innerText = t('lbl_village');
     document.querySelector('.lbl-variety').innerText = t('lbl_variety');
     document.querySelector('.lbl-size').innerText = t('lbl_size');
     document.querySelector('.lbl-coords').innerText = t('lbl_coords');
 
-    // Irrigation Units
     const unitSel = document.getElementById('irr_unit');
     unitSel.options[0].text = t('unit_min');
     unitSel.options[1].text = t('unit_hr');
 
-    // Settings Labels
     const settingMap = {
         'lbl-p_start_off': 'lbl_p_start_off', 'lbl-p_dur': 'lbl_p_dur', 
         'lbl-md_start_off': 'lbl_md_start_off', 'lbl-md_dur': 'lbl_md_dur',
@@ -727,9 +727,7 @@ function changeLanguage(lang) {
         if(el) el.innerText = t(key);
     }
 
-    // Update Size Units & Input
     updateSizeUnitOptions();
-
     initInputs(); 
     loadActiveFarmer(); 
 }
@@ -743,17 +741,19 @@ function updateSizeUnitOptions() {
     if (currentLang === 'en') {
         sel.add(new Option('ha', 'ha'));
         sel.add(new Option('a', 'a'));
+        sel.add(new Option('Bigha', 'bigha'));
+        sel.add(new Option('Decimal', 'decimal'));
     } else {
         sel.add(new Option(t('unit_bigha'), 'bigha'));
     }
     
-    // Set value
-    if(currentLang === 'en' && (currentVal === 'ha' || currentVal === 'a')) sel.value = currentVal;
-    else if(currentLang === 'bn') sel.value = 'bigha';
-    else if(currentLang === 'en') sel.value = 'ha'; // fallback
+    if(Array.from(sel.options).some(opt => opt.value === currentVal)) {
+        sel.value = currentVal;
+    } else {
+        sel.value = currentLang === 'en' ? 'ha' : 'bigha';
+    }
 }
 
-// --- Data Logic ---
 let farmers = []; 
 let activeIdx = 0;
 let calendar;
@@ -761,7 +761,6 @@ let memoModal;
 let tempPhotoData = null;
 let irrigationChart = null;
 
-// Sowing and Transplanting marked with *
 const dateKeys = [
     { id: 'sowing', type: 'base' },
     { id: 'tp', type: 'base' },
@@ -797,29 +796,24 @@ const slideConfig = [
     { id: 'harvest',  left: 96, top: 69 }   
 ];
 
-// Async load from DB
 async function initApp() {
     try {
         const lsData = localStorage.getItem('f3d_pro_final_v2');
         const dbCount = await db.farmers.count();
-        
         if (lsData && dbCount === 0) {
             const parsed = JSON.parse(lsData);
             await db.farmers.bulkPut(parsed);
         }
-
         farmers = await db.farmers.toArray();
         if (farmers.length === 0) {
             farmers = [{
-                id: Date.now(), 
-                name: "Farmer 1", 
+                id: Date.now(), name: "Farmer 1", village: "", 
                 settings: { ...DEFAULT_SETTINGS },
                 dates: {}, manualKeys: [], use_yp: false, memos: {}, photos: {}, completed: [], autoDates: {},
                 variety: "", fieldSize: "", fieldSizeUnit: "ha", coordinates: "", irrigation: {}
             }];
             await db.farmers.put(farmers[0]);
         }
-        
         activeIdx = 0;
         renderFarmerTabs();
         loadActiveFarmer();
@@ -854,8 +848,8 @@ function loadActiveFarmer() {
     if(!f.autoDates) f.autoDates = {};
     if(!f.irrigation) f.irrigation = {};
 
-    // Profile
     document.getElementById('prof_name').value = f.name;
+    document.getElementById('prof_village').value = f.village || "";
     document.getElementById('prof_variety').value = f.variety || "";
     document.getElementById('prof_size').value = f.fieldSize || "";
     updateSizeUnitOptions(); 
@@ -874,16 +868,21 @@ function loadActiveFarmer() {
         f.manualKeys.includes(k.id) ? el.classList.add('manual-highlight') : el.classList.remove('manual-highlight');
     });
     document.getElementById('date_yp').value = f.dates['yp'] || "";
+    
     recalculate('all');
+    renderIrrigationGraph(); 
+    if (calendar) {
+        calendar.render(); 
+    }
 }
 
 function updateProfile() {
     const f = farmers[activeIdx];
     f.name = document.getElementById('prof_name').value;
+    f.village = document.getElementById('prof_village').value;
     f.variety = document.getElementById('prof_variety').value;
     f.fieldSize = document.getElementById('prof_size').value;
     f.fieldSizeUnit = document.getElementById('prof_size_unit').value;
-    
     renderFarmerTabs(); 
     saveToLocal();
 }
@@ -923,7 +922,7 @@ function getBengaliDate(gregorianDateStr, forceBengali = false) {
     const benDay = dayOfYear + 1;
     if (currentLang === 'bn' || forceBengali) {
         const benMonth = bengaliMonthsBn[currentMonth];
-        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬৭八৯"[d]);
+        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬７৮৯"[d]);
         return `${benDayStr} ${benMonth}`;
     } else {
         const benMonth = bengaliMonthsEn[currentMonth];
@@ -934,14 +933,12 @@ function getBengaliDate(gregorianDateStr, forceBengali = false) {
 function recalculate(triggerId) {
     if(!farmers[activeIdx]) return;
     const f = farmers[activeIdx];
-    
     document.querySelectorAll('.config-panel input[type="number"]').forEach(el => {
-        if(el.id.startsWith('prof_')) return; // Skip profile inputs
+        if(el.id.startsWith('prof_')) return;
         f.settings[el.id] = el.value;
         if (DEFAULT_SETTINGS[el.id] != el.value) el.classList.add('manual-highlight');
         else el.classList.remove('manual-highlight');
     });
-
     if(!f.autoDates) f.autoDates = {};
     const setV = (id, date) => { 
         if(!isNaN(date)) { 
@@ -954,108 +951,86 @@ function recalculate(triggerId) {
             }
         } 
     };
-
     if (!document.getElementById('date_sowing').value) {
         if (document.getElementById('date_heading').value) setV('sowing', addDays(new Date(document.getElementById('date_heading').value), -parseInt(f.settings.hd_das)));
         else if (document.getElementById('date_tp').value) setV('sowing', addDays(new Date(document.getElementById('date_tp').value), -40));
         else if (document.getElementById('date_md_start').value) setV('sowing', addDays(new Date(document.getElementById('date_md_start').value), -parseInt(f.settings.md_start_off)));
     }
-
     const sowingStr = document.getElementById('date_sowing').value;
     const sowing = sowingStr ? new Date(sowingStr) : null;
-    
     if (sowing) {
         setV('tp', addDays(sowing, 40));
         setV('md_start', addDays(sowing, parseInt(f.settings.md_start_off)));
         setV('heading', addDays(sowing, f.settings.hd_das));
     }
-
     const tpStr = document.getElementById('date_tp').value;
     if (tpStr) {
         setV('p_start', addDays(new Date(tpStr), parseInt(f.settings.p_start_off)));
         const pStartStr = document.getElementById('date_p_start').value;
         if(pStartStr) setV('p_end', addDays(new Date(pStartStr), f.settings.p_dur));
     }
-
     const mdStartStr = document.getElementById('date_md_start').value;
     if (mdStartStr) {
         const mdStart = new Date(mdStartStr);
         setV('md_end', addDays(mdStart, f.settings.md_dur));
         setV('pi_check_start', addDays(mdStart, f.settings.pi_check_off || 6));
     }
-
     const hdStr = document.getElementById('date_heading').value;
     if (hdStr) {
         const hd = new Date(hdStr);
         const piOff = parseInt(f.settings.pi_off);
         const f3dOff = parseInt(f.settings.f3d_off);
-
         if (f.use_yp && document.getElementById('date_yp').value) setV('pi_flood_start', new Date(document.getElementById('date_yp').value));
         else setV('pi_flood_start', addDays(hd, -piOff));
-        
         const piStartStr = document.getElementById('date_pi_flood_start').value;
         if(piStartStr) setV('pi_flood_end', addDays(new Date(piStartStr), (piOff - f3dOff)));
-        
         const piEndStr = document.getElementById('date_pi_flood_end').value;
         if (piEndStr) setV('f3d1', new Date(piEndStr));
         else setV('f3d1', addDays(hd, -f3dOff));
-
         for(let i=2; i<=6; i++) {
             const prevStr = document.getElementById(`date_f3d${i-1}`).value;
             if(prevStr) setV(`f3d${i}`, addDays(new Date(prevStr), 7));
         }
-        
         const f3d6Str = document.getElementById('date_f3d6').value;
         if(f3d6Str) {
             setV('f3d_end', addDays(new Date(f3d6Str), 7));
             const f3dEndStr = document.getElementById('date_f3d_end').value;
             if(f3dEndStr) setV('last_irr', addDays(new Date(f3dEndStr), 1));
         }
-        
         setV('harvest', addDays(hd, f.settings.hv_off));
     }
-    
     const sVal = document.getElementById('date_sowing').value;
     const tVal = document.getElementById('date_tp').value;
     const allowOthers = sVal && tVal;
-    
     dateKeys.forEach(k => {
         const benSpan = document.getElementById('ben_date_' + k.id);
         if(benSpan) benSpan.innerText = f.dates[k.id] ? getBengaliDate(f.dates[k.id]) : "";
-
         const el = document.getElementById('date_'+k.id);
         const lockIcon = document.getElementById('lock_icon_'+k.id);
-
         if(el) {
             let isDisabled = false;
             if (k.id !== 'sowing' && k.id !== 'tp' && !allowOthers) isDisabled = true;
             if (f.completed && f.completed.includes(k.id)) isDisabled = true;
             el.disabled = isDisabled;
-
             if (lockIcon) isDisabled ? lockIcon.classList.remove('d-none') : lockIcon.classList.add('d-none');
-
             if (f.manualKeys.includes(k.id)) el.classList.add('manual-highlight');
             else el.classList.remove('manual-highlight');
         }
     });
-
     const ypCheck = document.getElementById('use_yp');
     const ypDate = document.getElementById('date_yp');
     const ypLockIcon = document.getElementById('lock_icon_yp');
-
     if(ypCheck) ypCheck.disabled = !allowOthers || (f.completed && f.completed.includes('yp'));
     if(ypDate) {
         let ypIsDisabled = false;
         if(!allowOthers || (f.completed && f.completed.includes('yp'))) ypIsDisabled = true;
         else ypIsDisabled = !ypCheck.checked;
-        
         ypDate.disabled = ypIsDisabled;
         if (ypLockIcon) {
             const isFullyLocked = !allowOthers || (f.completed && f.completed.includes('yp'));
             isFullyLocked ? ypLockIcon.classList.remove('d-none') : ypLockIcon.classList.add('d-none');
         }
     }
-
     saveToLocal(); 
     refreshViews();
 }
@@ -1070,20 +1045,16 @@ function refreshViews() {
     const events = [];
     const tbody = document.getElementById('schedule_tbody'); 
     tbody.innerHTML = "";
-    
     const log = document.getElementById('memo_log_container'); 
     log.innerHTML = "";
-    
     const noteDates = new Set([...Object.keys(f.memos || {}), ...Object.keys(f.photos || {}), ...Object.keys(f.irrigation || {})]);
     Array.from(noteDates).sort().reverse().forEach(date => {
         const hasMemo = f.memos && f.memos[date];
         const hasPhoto = f.photos && f.photos[date];
         const irr = f.irrigation && f.irrigation[date];
-        
         if(hasMemo) events.push({ title: "📝", start: date, color: '#ffc107', textColor: '#000' });
         if(hasPhoto) events.push({ title: "📷", start: date, color: '#17a2b8', textColor: '#fff' });
         if(irr) events.push({ title: `💧 ${irr.value}${irr.unit}`, start: date, color: '#0dcaf0', textColor: '#000' });
-
         let content = `<div class="memo-list-item"><strong>${date}:</strong><br>`;
         if(irr) content += `<span class="badge bg-info text-dark">Irrigation: ${irr.value} ${irr.unit}</span><br>`;
         if(hasMemo) content += `<span>${f.memos[date]}</span><br>`;
@@ -1091,92 +1062,42 @@ function refreshViews() {
         content += `</div>`;
         log.innerHTML += content;
     });
-
     if (f.dates['p_start'] && f.dates['p_end']) {
-        events.push({
-            start: f.dates['p_start'],
-            end: formatDateISO(addDays(new Date(f.dates['p_end']), 1)),
-            display: 'background',
-            color: '#c3e6cb'
-        });
+        events.push({ start: f.dates['p_start'], end: formatDateISO(addDays(new Date(f.dates['p_end']), 1)), display: 'background', color: '#c3e6cb' });
     }
     if (f.dates['md_start'] && f.dates['md_end']) {
-        events.push({
-            start: f.dates['md_start'],
-            end: formatDateISO(addDays(new Date(f.dates['md_end']), 1)),
-            display: 'background',
-            color: '#ffeeba'
-        });
+        events.push({ start: f.dates['md_start'], end: formatDateISO(addDays(new Date(f.dates['md_end']), 1)), display: 'background', color: '#ffeeba' });
     }
-
     if(f.use_yp && f.dates['yp']) {
         events.push({ title: "YP Check", start: f.dates['yp'], color: '#333' });
         const benDate = getBengaliDate(f.dates['yp']);
         const isDone = f.completed && f.completed.includes('yp');
-        tbody.innerHTML += `
-            <tr class="row-base">
-                <td>${t('yp_label')}</td>
-                <td class="fw-bold text-end">${f.dates['yp']}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small></td>
-                <td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('yp')"></td>
-            </tr>`;
+        tbody.innerHTML += `<tr class="row-base"><td>${t('yp_label')}</td><td class="fw-bold text-end">${f.dates['yp']}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small></td><td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('yp')"></td></tr>`;
     }
-
     let prevDateStr = null;
-
     dateKeys.forEach(k => {
         const val = f.dates[k.id];
         if(val) {
             const benDate = getBengaliDate(val);
-            events.push({ 
-                title: `${t(k.id)} (${benDate})`, 
-                start: val, 
-                allDay: true, 
-                color: { pitan:'#28a745', md:'#e2b709', pi:'#ffe066', f3d:'#007bff', heading:'#6b46c1', base:'#718096' }[k.type] 
-            });
-
+            events.push({ title: `${t(k.id)} (${benDate})`, start: val, allDay: true, color: { pitan:'#28a745', md:'#e2b709', pi:'#ffe066', f3d:'#007bff', heading:'#6b46c1', base:'#718096' }[k.type] });
             if (k.id.startsWith('f3d') && k.id !== 'f3d_end') {
-                events.push({
-                    title: `3F4D Flood`,
-                    start: val,
-                    end: formatDateISO(addDays(new Date(val), 3)),
-                    color: '#0056b3', allDay: true
-                });
-                events.push({
-                    title: `3F4D Drain`,
-                    start: formatDateISO(addDays(new Date(val), 3)),
-                    end: formatDateISO(addDays(new Date(val), 7)),
-                    color: '#adb5bd', allDay: true
-                });
+                events.push({ title: `3F4D Flood`, start: val, end: formatDateISO(addDays(new Date(val), 3)), color: '#0056b3', allDay: true });
+                events.push({ title: `3F4D Drain`, start: formatDateISO(addDays(new Date(val), 3)), end: formatDateISO(addDays(new Date(val), 7)), color: '#adb5bd', allDay: true });
             }
-
             let rowClass = `row-${k.type}`;
             let warningText = "";
-            if (prevDateStr && val < prevDateStr) {
-                rowClass += " row-error";
-                warningText = ` <span class="badge bg-danger">! Order</span>`;
-            }
+            if (prevDateStr && val < prevDateStr) { rowClass += " row-error"; warningText = ` <span class="badge bg-danger">! Order</span>`; }
             prevDateStr = val;
-
             const isDone = f.completed && f.completed.includes(k.id);
             let calcInfo = "";
             if (f.autoDates && f.autoDates[k.id] && f.autoDates[k.id] !== val) {
                 const benCalcDate = getBengaliDate(f.autoDates[k.id]);
                 calcInfo = `<br><span class="text-muted" style="font-size: 0.7em;">${t('calc_val')} ${f.autoDates[k.id]} (${benCalcDate})</span>`;
             }
-
-            tbody.innerHTML += `<tr class="${rowClass}">
-                <td>${t(k.id)}${warningText}</td>
-                <td class="fw-bold text-end">
-                    ${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small>
-                    ${calcInfo}
-                </td>
-                <td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('${k.id}')"></td>
-            </tr>`;
+            tbody.innerHTML += `<tr class="${rowClass}"><td>${t(k.id)}${warningText}</td><td class="fw-bold text-end">${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small>${calcInfo}</td><td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('${k.id}')"></td></tr>`;
         }
     });
-
     if(calendar) { calendar.removeAllEvents(); calendar.addEventSource(events); }
-
     const slideMarkers = document.getElementById('slide_markers');
     slideMarkers.innerHTML = '';
     slideConfig.forEach(item => {
@@ -1197,31 +1118,18 @@ function refreshViews() {
 function addDays(d, n) { const res = new Date(d); res.setDate(res.getDate() + parseInt(n)); return res; }
 function resetSetting(id, defaultVal) { document.getElementById(id).value = defaultVal; recalculate('all'); }
 
-// --- Memo & Photo & Irrigation ---
 function handleDateClick(info) {
     const f = farmers[activeIdx];
     const date = info.dateStr;
     document.getElementById('memoDate').value = date;
     document.getElementById('memoDateDisplay').innerText = date;
     document.getElementById('memoInput').value = (f.memos && f.memos[date]) ? f.memos[date] : "";
-    
-    // Load Irrigation
-    if (f.irrigation && f.irrigation[date]) {
-        document.getElementById('irr_time').value = f.irrigation[date].value;
-        document.getElementById('irr_unit').value = f.irrigation[date].unit;
-    } else {
-        document.getElementById('irr_time').value = "";
-        document.getElementById('irr_unit').value = "min";
-    }
-
+    if (f.irrigation && f.irrigation[date]) { document.getElementById('irr_time').value = f.irrigation[date].value; document.getElementById('irr_unit').value = f.irrigation[date].unit; }
+    else { document.getElementById('irr_time').value = ""; document.getElementById('irr_unit').value = "min"; }
     clearPhotoUI();
     document.getElementById('photoInput').value = "";
     tempPhotoData = null;
-
-    if(f.photos && f.photos[date]) {
-        tempPhotoData = f.photos[date];
-        showPreview(tempPhotoData);
-    } 
+    if(f.photos && f.photos[date]) { tempPhotoData = f.photos[date]; showPreview(tempPhotoData); } 
     memoModal.show();
 }
 
@@ -1269,23 +1177,12 @@ function saveMemo() {
     const text = document.getElementById('memoInput').value;
     const irrVal = document.getElementById('irr_time').value;
     const irrUnit = document.getElementById('irr_unit').value;
-    
     if(!f.memos) f.memos = {};
     if(!f.photos) f.photos = {};
     if(!f.irrigation) f.irrigation = {};
-
-    if (text === "") delete f.memos[date];
-    else f.memos[date] = text;
-
-    if (tempPhotoData) f.photos[date] = tempPhotoData;
-    else delete f.photos[date];
-
-    if (irrVal && irrVal > 0) {
-        f.irrigation[date] = { value: parseFloat(irrVal), unit: irrUnit };
-    } else {
-        delete f.irrigation[date];
-    }
-
+    if (text === "") delete f.memos[date]; else f.memos[date] = text;
+    if (tempPhotoData) f.photos[date] = tempPhotoData; else delete f.photos[date];
+    if (irrVal && irrVal > 0) { f.irrigation[date] = { value: parseFloat(irrVal), unit: irrUnit }; } else { delete f.irrigation[date]; }
     saveToLocal();
     refreshViews();
     memoModal.hide();
@@ -1307,7 +1204,7 @@ function addNewFarmer() {
     const name = prompt("Enter Farmer/Field Name:");
     if (name) { 
         const newFarmer = { 
-            id: Date.now(), name, 
+            id: Date.now(), name, village: "", 
             settings: { ...DEFAULT_SETTINGS }, 
             dates: {}, manualKeys: [], use_yp: false, memos: {}, photos: {}, completed: [], autoDates: {},
             variety: "", fieldSize: "", fieldSizeUnit: "ha", coordinates: "", irrigation: {}
@@ -1343,7 +1240,7 @@ function renameFarmer() {
     const n = prompt("New Name:", farmers[activeIdx].name); 
     if(n){ 
         farmers[activeIdx].name = n; 
-        document.getElementById('prof_name').value = n; // Sync with profile
+        document.getElementById('prof_name').value = n;
         saveToLocal(); 
         renderFarmerTabs(); 
     } 
@@ -1381,14 +1278,8 @@ async function confirmResetAll() {
 async function shareOrDownload(blob, fileName) {
     const file = new File([blob], fileName, { type: blob.type });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-            await navigator.share({ files: [file], title: fileName });
-        } catch (err) {
-            downloadFallback(blob, fileName);
-        }
-    } else {
-        downloadFallback(blob, fileName);
-    }
+        try { await navigator.share({ files: [file], title: fileName }); } catch (err) { downloadFallback(blob, fileName); }
+    } else { downloadFallback(blob, fileName); }
 }
 
 function downloadFallback(blob, fileName) {
@@ -1402,17 +1293,15 @@ function exportToExcel() {
     const f = farmers[activeIdx];
     const todayStr = new Date().toISOString().slice(0,10);
     const fileName = `${f.name}_${todayStr}_Schedule.csv`;
-
     let csv = "\uFEFF0. Field Profile\n";
     csv += `Farmer Name,${f.name}\n`;
+    csv += `Village Name,${f.village || ""}\n`;
     csv += `Rice Variety,${f.variety || ""}\n`;
     csv += `Field Size,${f.fieldSize || ""} ${f.fieldSizeUnit || ""}\n`;
     csv += `GPS Coordinates,"${f.coordinates || ""}"\n\n`;
-    
     csv += "Category,Event,Date\n";
     if(f.memos) Object.keys(f.memos).forEach(d => csv += `"Note","${f.memos[d]}","${d}"\n`);
     dateKeys.forEach(k => { if(f.dates[k.id]) csv += `"Schedule","${t(k.id)}","${f.dates[k.id]}"\n`; });
-    
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     shareOrDownload(blob, fileName);
 }
@@ -1427,46 +1316,29 @@ function toggleComplete(id) {
 }
 
 function renderIrrigationGraph() {
-    const ctx = document.getElementById('irrigationChart').getContext('2d');
+    const ctx = document.getElementById('irrigationChart');
+    if (!ctx) return;
     const f = farmers[activeIdx];
-    if (!f.irrigation) {
-        if(irrigationChart) irrigationChart.destroy();
-        return;
-    }
-
+    if (!f.irrigation) { if(irrigationChart) irrigationChart.destroy(); return; }
     const sortedDates = Object.keys(f.irrigation).sort();
     let cumulative = 0;
     const dailyData = [];
     const cumulativeData = [];
-    
     sortedDates.forEach(d => {
         let val = f.irrigation[d].value;
-        if (f.irrigation[d].unit === 'hr') val *= 60; // Normalize to min
+        if (f.irrigation[d].unit === 'hr') val *= 60;
         cumulative += val;
         dailyData.push(val);
         cumulativeData.push(cumulative);
     });
-
     if(irrigationChart) irrigationChart.destroy();
-
-    irrigationChart = new Chart(ctx, {
+    irrigationChart = new Chart(ctx.getContext('2d'), {
         type: 'bar',
         data: {
             labels: sortedDates,
             datasets: [
-                {
-                    label: 'Daily (min)',
-                    data: dailyData,
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    yAxisID: 'y'
-                },
-                {
-                    label: 'Cumulative (min)',
-                    data: cumulativeData,
-                    type: 'line',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    yAxisID: 'y1'
-                }
+                { label: 'Daily (min)', data: dailyData, backgroundColor: 'rgba(54, 162, 235, 0.6)', yAxisID: 'y' },
+                { label: 'Cumulative (min)', data: cumulativeData, type: 'line', borderColor: 'rgba(255, 99, 132, 1)', yAxisID: 'y1' }
             ]
         },
         options: {
@@ -1484,14 +1356,8 @@ function exportJSON(scope) {
     const f = farmers[activeIdx];
     const todayStr = new Date().toISOString().slice(0,10);
     let fileName = "";
-
-    if (scope === 'all') {
-        dataToExport = farmers;
-        fileName = `3F4D_FullBackup_${todayStr}.json`;
-    } else {
-        dataToExport = f;
-        fileName = `${f.name}_${todayStr}_ShareData.json`;
-    }
+    if (scope === 'all') { dataToExport = farmers; fileName = `3F4D_FullBackup_${todayStr}.json`; }
+    else { dataToExport = f; fileName = `${f.name}_${todayStr}_ShareData.json`; }
     const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: "application/json" });
     shareOrDownload(blob, fileName);
 }
@@ -1504,22 +1370,13 @@ function importJSON(input) {
                 const importedData = JSON.parse(e.target.result);
                 if (Array.isArray(importedData)) {
                     if(confirm("Restore FULL Backup? This replaces ALL current data.")) {
-                        await db.farmers.clear();
-                        await db.farmers.bulkPut(importedData);
-                        location.reload();
+                        await db.farmers.clear(); await db.farmers.bulkPut(importedData); location.reload();
                     }
                 } else if (typeof importedData === 'object' && importedData.id) {
-                    importedData.id = Date.now();
-                    importedData.name += " (Imp)";
-                    await db.farmers.put(importedData);
-                    farmers.push(importedData);
-                    activeIdx = farmers.length - 1;
-                    renderFarmerTabs();
-                    loadActiveFarmer();
-                    alert("Import Successful!");
-                } else {
-                    alert("Invalid JSON.");
-                }
+                    importedData.id = Date.now(); importedData.name += " (Imp)";
+                    await db.farmers.put(importedData); farmers.push(importedData);
+                    activeIdx = farmers.length - 1; renderFarmerTabs(); loadActiveFarmer(); alert("Import Successful!");
+                } else { alert("Invalid JSON."); }
             } catch (err) { alert("Error parsing JSON."); console.error(err); }
             input.value = "";
         };
@@ -1542,9 +1399,8 @@ function downloadMap() {
     const todayStr = new Date().toISOString().slice(0,10);
     wrapper.style.transform = "scale(1)";
     html2canvas(wrapper).then(canvas => {
-        canvas.toBlob(blob => {
-            shareOrDownload(blob, `Map_${farmers[activeIdx].name}_${todayStr}.png`);
-        });
+        // PNGからJPEG品質0.6に変更
+        canvas.toBlob(blob => { shareOrDownload(blob, `Map_${farmers[activeIdx].name}_${todayStr}.jpg`); }, 'image/jpeg', 0.6);
         wrapper.style.transform = originalTransform;
     });
 }
@@ -1563,14 +1419,12 @@ if(mapContainer) {
             initialPinchScale = currentScale;
         }
     }, { passive: false });
-
     mapContainer.addEventListener('touchmove', (e) => {
         if (e.touches.length === 2) {
             e.preventDefault();
             const dx = e.touches[0].pageX - e.touches[1].pageX;
             const dy = e.touches[0].pageY - e.touches[1].pageY;
             const dist = Math.sqrt(dx*dx + dy*dy);
-            
             if (initialPinchDist > 0) {
                 const scaleDiff = dist / initialPinchDist;
                 let newScale = initialPinchScale * scaleDiff;
@@ -1585,75 +1439,102 @@ if(mapContainer) {
 
 function exportPDF() {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF('l', 'mm', 'a4');
     const f = farmers[activeIdx];
     const todayStr = new Date().toISOString().slice(0,10);
-    
     const slideTab = document.getElementById('tab-slide');
     const wasHidden = slideTab.classList.contains('fade') && !slideTab.classList.contains('show');
-    if(wasHidden) {
-        slideTab.classList.add('show', 'active');
-        slideTab.style.display = 'block';
-    }
-
+    if(wasHidden) { slideTab.classList.add('show', 'active'); slideTab.style.display = 'block'; }
     doc.setFontSize(16);
     doc.text(`3F4D Schedule: ${f.name}`, 10, 10);
     doc.setFontSize(10);
-    doc.text(`Variety: ${f.variety || '-'} | Size: ${f.fieldSize || '-'} ${f.fieldSizeUnit || ''}`, 10, 16);
-    
-    const tableData = dateKeys.map(k => {
-        if(!f.dates[k.id]) return null;
-        return [t(k.id), f.dates[k.id], getBengaliDate(f.dates[k.id])];
-    }).filter(x => x);
-    
-    doc.autoTable({
-        head: [['Event', 'Date', 'Bengali Date']],
-        body: tableData,
-        startY: 20
-    });
-    
+    doc.text(`Village: ${f.village || '-'} | Variety: ${f.variety || '-'} | Size: ${f.fieldSize || '-'} ${f.fieldSizeUnit || ''}`, 10, 16);
+    const tableData = dateKeys.map(k => { if(!f.dates[k.id]) return null; return [t(k.id), f.dates[k.id], getBengaliDate(f.dates[k.id])]; }).filter(x => x);
+    doc.autoTable({ head: [['Event', 'Date', 'Bengali Date']], body: tableData, startY: 20 });
     const wrapper = document.getElementById('slide_wrapper');
     const originalTransform = wrapper.style.transform;
     wrapper.style.transform = "scale(1)";
-    
-    html2canvas(wrapper).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const imgProps = doc.getImageProperties(imgData);
+    // 解像度をscale:1に下げ、JPEG形式で圧縮
+    html2canvas(wrapper, { scale: 1 }).then(canvas => {
+        const imgData = canvas.toDataURL('image/jpeg', 0.5);
         const pdfWidth = doc.internal.pageSize.getWidth() - 20;
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        
-        doc.addPage();
-        doc.text("Irrigation Map", 10, 10);
-        doc.addImage(imgData, 'PNG', 10, 20, pdfWidth, pdfHeight);
-        
-        doc.save(`${f.name}_${todayStr}_Report.pdf`);
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        doc.addPage(); doc.text("Irrigation Map", 10, 10); doc.addImage(imgData, 'JPEG', 10, 20, pdfWidth, pdfHeight);
+        const blob = doc.output('blob');
+        shareOrDownload(blob, `${f.name}_${todayStr}_Report.pdf`);
         wrapper.style.transform = originalTransform;
-        
-        if(wasHidden) {
-            slideTab.classList.remove('show', 'active');
-            slideTab.style.display = '';
-        }
+        if(wasHidden) { slideTab.classList.remove('show', 'active'); slideTab.style.display = ''; }
     });
+}
+
+// --- Enhanced Function: Calendar Export (Compressed) ---
+async function exportCalendarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('l', 'mm', 'a4');
+    const f = farmers[activeIdx];
+    const todayStr = new Date().toISOString().slice(0,10);
+    const originalDate = calendar.getDate();
+
+    const allDates = [
+        ...Object.values(f.dates || {}),
+        ...Object.keys(f.memos || {}),
+        ...Object.keys(f.photos || {}),
+        ...Object.keys(f.irrigation || {})
+    ].filter(d => d && d.includes('-'));
+
+    const uniqueMonths = [...new Set(allDates.map(d => d.substring(0, 7)))].sort();
+
+    if (uniqueMonths.length === 0) {
+        alert("No scheduled events found.");
+        return;
+    }
+
+    const calTab = document.getElementById('tab-cal');
+    const wasHidden = !calTab.classList.contains('show');
+    if(wasHidden) { calTab.classList.add('show', 'active'); calTab.style.display = 'block'; }
+    
+    for (let i = 0; i < uniqueMonths.length; i++) {
+        const monthStr = uniqueMonths[i];
+        calendar.gotoDate(monthStr + "-01");
+        calendar.updateSize();
+        await new Promise(r => setTimeout(r, 600));
+
+        const calEl = document.getElementById('calendar');
+        // scale: 1 に下げて軽量化
+        await html2canvas(calEl, { scale: 2 }).then(canvas => {
+            if (i > 0) doc.addPage();
+            doc.setFontSize(14);
+            doc.text(`${f.name} - ${monthStr}`, 10, 12);
+            doc.setFontSize(9);
+            const profileText = `Village: ${f.village || '-'} | Variety: ${f.variety || '-'} | Size: ${f.fieldSize || '-'} ${f.fieldSizeUnit || ''} | GPS: ${f.coordinates || '-'}`;
+            doc.text(profileText, 10, 18);
+
+            // PNGからJPEGに変更し、品質を0.8に設定
+            const imgData = canvas.toDataURL('image/jpeg', 0.8);
+            const pdfWidth = doc.internal.pageSize.getWidth();
+            const margin = 10;
+            const displayWidth = pdfWidth - (margin * 2);
+            const displayHeight = (canvas.height * displayWidth) / canvas.width;
+
+            doc.addImage(imgData, 'JPEG', margin, 22, displayWidth, displayHeight);
+        });
+    }
+
+    calendar.gotoDate(originalDate);
+    if(wasHidden) { calTab.classList.remove('show', 'active'); calTab.style.display = ''; }
+
+    const blob = doc.output('blob');
+    shareOrDownload(blob, `${f.name}_${todayStr}_FullCalendar.pdf`);
 }
 
 function exportIrrigationCSV() {
     const f = farmers[activeIdx];
     const todayStr = new Date().toISOString().slice(0,10);
     const fileName = `${f.name}_${todayStr}_IrrigationTime.csv`;
-
     if (!f.irrigation) return alert("No irrigation data.");
-
     let csv = "\uFEFF0. Field Profile\n";
-    csv += `Farmer Name,${f.name}\n`;
-    csv += `Rice Variety,${f.variety || ""}\n`;
-    csv += `Field Size,${f.fieldSize || ""} ${f.fieldSizeUnit || ""}\n`;
-    csv += `GPS Coordinates,"${f.coordinates || ""}"\n\n`;
-
-    csv += "Date,Value,Unit\n";
-    Object.keys(f.irrigation).sort().forEach(d => {
-        csv += `${d},${f.irrigation[d].value},${f.irrigation[d].unit}\n`;
-    });
-    
+    csv += `Farmer Name,${f.name}\nVillage Name,${f.village || ""}\nRice Variety,${f.variety || ""}\nField Size,${f.fieldSize || ""} ${f.fieldSizeUnit || ""}\nGPS Coordinates,"${f.coordinates || ""}"\n\nDate,Value,Unit\n`;
+    Object.keys(f.irrigation).sort().forEach(d => { csv += `${d},${f.irrigation[d].value},${f.irrigation[d].unit}\n`; });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     shareOrDownload(blob, fileName);
 }
@@ -1664,57 +1545,41 @@ function exportIrrigationPDF() {
     const doc = new jsPDF('landscape');
     const f = farmers[activeIdx];
     const todayStr = new Date().toISOString().slice(0,10);
-    
-    doc.setFontSize(16);
-    doc.text(`Irrigation Graph: ${f.name}`, 10, 10);
-    
-    const imgData = irrigationChart.toBase64Image();
-    doc.addImage(imgData, 'PNG', 10, 20, 280, 150);
-    doc.save(`${f.name}_${todayStr}_IrrigationGraph.pdf`);
+    doc.setFontSize(16); doc.text(`Irrigation Graph: ${f.name}`, 10, 10);
+    // グラフ画像も圧縮設定で取得
+    const imgData = irrigationChart.toBase64Image('image/jpeg', 0.6); 
+    doc.addImage(imgData, 'JPEG', 10, 20, 280, 150);
+    const blob = doc.output('blob');
+    shareOrDownload(blob, `${f.name}_${todayStr}_IrrigationGraph.pdf`);
 }
 
-// 2. Automated Notification Logic for "Today"
 function checkNotifications() {
     if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") {
-        Notification.requestPermission();
-    } else {
+    if (Notification.permission !== "granted") { Notification.requestPermission(); }
+    else {
         const f = farmers[activeIdx];
         if(!f) return;
-        
         const today = new Date();
         const todayStr = formatDateISO(today);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
         const tomorrowStr = formatDateISO(tomorrow);
-        
-        // Check for Today's events
         dateKeys.forEach(k => {
             if(f.dates[k.id] === todayStr) {
                 const eventLabel = t(k.id);
-                const msg = currentLang === 'bn' 
-                    ? `আজ ${eventLabel}` 
-                    : `Today is ${eventLabel}`;
-                
-                new Notification("3F4D Notification", { body: msg, icon: 'icon.png' });
-                alert(msg);
+                const msg = currentLang === 'bn' ? `আজ ${eventLabel}` : `Today is ${eventLabel}`;
+                new Notification("3F4D Notification", { body: msg, icon: 'icon.png' }); alert(msg);
             }
         });
-
-        // Check for Tomorrow's events (Existing feature)
         let eventFound = false;
         dateKeys.forEach(k => { if(f.dates[k.id] === tomorrowStr) eventFound = true; });
         if(eventFound) new Notification(t('notif_title'), { body: t('notif_msg'), icon: 'icon.png' });
     }
 }
 
-// Init
 document.addEventListener('DOMContentLoaded', () => {
     changeLanguage(localStorage.getItem('f3d_lang') || 'en');
     memoModal = new bootstrap.Modal(document.getElementById('memoModal'));
-    
     initApp(); 
-    
     calendar = new FullCalendar.Calendar(document.getElementById('calendar'), { 
         initialView: 'dayGridMonth', 
         headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
@@ -1723,23 +1588,18 @@ document.addEventListener('DOMContentLoaded', () => {
         dayCellContent: function(arg) {
             const gregDay = arg.date.getDate();
             const benDateStr = getBengaliDate(formatDateISO(arg.date), true);
-            return {
-                html: `${gregDay}<br><span class="ben-cal-date">${benDateStr}</span>`
-            };
+            return { html: `${gregDay}<br><span class="ben-cal-date">${benDateStr}</span>` };
         }
     });
     calendar.render(); 
-    
-    document.getElementById('cal-tab').addEventListener('shown.bs.tab', () => calendar.updateSize());
-    document.querySelectorAll('.config-panel input[type="number"]').forEach(el => {
-        if(!el.id.startsWith('prof_')) el.onchange = () => recalculate('all');
-    });
+    document.getElementById('cal-tab').addEventListener('shown.bs.tab', () => { if (calendar) { calendar.updateSize(); calendar.render(); } });
+    document.querySelectorAll('.config-panel input[type="number"]').forEach(el => { if(!el.id.startsWith('prof_')) el.onchange = () => recalculate('all'); });
 });
 </script>
 
 <footer class="text-center mt-5 mb-4 text-secondary" style="font-size: 0.75rem; border-top: 1px solid #dee2e6; padding-top: 20px;">
 <p class="mb-1">This app was developed by Takehiro Kamiya (Univ. Tokyo).</p>
-        <p class="mb-0">Use this application at your own risk.</p>
+<p class="mb-0">Use this application at your own risk.</p>
 </footer>
 
 </body>
