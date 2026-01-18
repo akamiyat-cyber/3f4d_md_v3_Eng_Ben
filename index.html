@@ -41,8 +41,28 @@
         }
         
         .header-section { background: #fff; padding: 10px; border-bottom: 1px solid #dee2e6; position: sticky; top: 0; z-index: 1050; }
-        .farmer-nav { display: flex; align-items: center; gap: 10px; overflow-x: auto; margin-top: 5px; }
-        .farmer-tab { padding: 5px 15px; border-radius: 20px; border: 1px solid #ddd; background: #f8f9fa; white-space: nowrap; cursor: pointer; transition: 0.2s; }
+        .farmer-nav { 
+        display: flex; 
+        align-items: center; 
+        gap: 10px; 
+        overflow-x: auto; 
+        margin-top: 5px;
+        width: 100%;                        /* 横幅を一杯に広げる */
+        -webkit-overflow-scrolling: touch;  /* iOSでのスクロールを滑らかにする */
+        padding-bottom: 5px;                /* スクロール時に下が隠れないよう余白を追加 */
+       }
+       
+        .farmer-tab { 
+        padding: 5px 15px; 
+        border-radius: 20px; 
+        border: 1px solid #ddd; 
+        background: #f8f9fa; 
+        white-space: nowrap; 
+        cursor: pointer; 
+        transition: 0.2s;
+        flex-shrink: 0; /* 重要：タブのサイズを維持し、縮まないように固定する */
+        }
+        
         .farmer-tab.active { background: var(--ios-accent); color: white; border-color: var(--ios-accent); font-weight: bold; }
         .btn-add-farmer { border-radius: 50%; width: 32px; height: 32px; padding: 0; font-weight: bold; flex-shrink: 0; }
 
