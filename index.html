@@ -110,7 +110,6 @@
             line-height: 1.2 !important;
         }
         /* --- ここまで --- */
-        
 
         .yp-toggle-container { border: 2px solid var(--border-pi); border-radius: 8px; padding: 10px; background-color: #fffdf5; margin: 10px 0; }
         #calendar { background: white; padding: 10px; border-radius: 12px; min-height: 450px; }
@@ -1727,7 +1726,7 @@ function checkNotifications() {
     }
 }
 
-// NEW: Function to show all schedules
+// NEW: Function to show all schedules (with Today highlighting)
 function showAllSchedules() {
     // Lazy initialize modal
     if (!allSchedulesModalObj) {
@@ -1738,6 +1737,8 @@ function showAllSchedules() {
     tbody.innerHTML = "";
 
     let allEvents = [];
+    // 今日の日付を取得 (YYYY-MM-DD形式)
+    const todayStr = formatDateISO(new Date());
 
     // Collect all events from all farmers
     farmers.forEach(f => {
@@ -1773,13 +1774,22 @@ function showAllSchedules() {
     // Render Rows
     allEvents.forEach(e => {
         const benDate = getBengaliDate(e.date);
+        const isToday = e.date === todayStr; // 今日かどうか判定
+        
         const statusBadge = e.done 
             ? '<span class="badge bg-success">Done</span>' 
             : '<span class="badge bg-secondary">Pending</span>';
         
+        // 今日なら背景色を変更し、IDを付与する
+        const highlightClass = isToday ? 'table-warning border-2 border-primary' : '';
+        const rowId = isToday ? 'id="scroll-to-today"' : '';
+
         const row = `
-            <tr>
-                <td style="white-space:nowrap;"><strong>${e.date}</strong><br><small class="text-muted">${benDate}</small></td>
+            <tr ${rowId} class="${highlightClass}">
+                <td style="white-space:nowrap;">
+                    <strong>${isToday ? '★ ' : ''}${e.date}</strong><br>
+                    <small class="text-muted">${benDate}</small>
+                </td>
                 <td><strong>${e.farmer}</strong><br><small class="text-muted">${e.village}</small></td>
                 <td>${e.eventName}</td>
                 <td>${statusBadge}</td>
@@ -1789,6 +1799,14 @@ function showAllSchedules() {
     });
 
     allSchedulesModalObj.show();
+
+    // モーダルが表示された後に今日の日付までスクロール
+    document.getElementById('allSchedulesModal').addEventListener('shown.bs.modal', function () {
+        const todayRow = document.getElementById('scroll-to-today');
+        if (todayRow) {
+            todayRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, { once: true });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
