@@ -152,6 +152,9 @@
         <h5 class="fw-bold text-primary m-0">
             3F4D+MD Pro
             <span style="font-size: 0.5em; color: #6c757d;">(JICA/JST)</span>
+            <span id="install-count" class="badge bg-light text-dark border ms-1" style="font-size: 0.4em; vertical-align: middle; font-weight: normal;">
+                Loading...
+            </span>
         </h5>
         
         <div class="d-flex gap-2">
@@ -490,6 +493,49 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
 <script>
+// --- Update 2: CountAPI & First Launch Logic ---
+const COUNTAPI_NAMESPACE = '3f4d_pro_scheduler_2026'; 
+const COUNTAPI_KEY = 'unique_users';
+
+// カウンターの数値を更新して表示する関数
+async function updateInstallDisplay() {
+    try {
+        const response = await fetch(`https://api.countapi.xyz/get/${COUNTAPI_NAMESPACE}/${COUNTAPI_KEY}`);
+        const data = await response.json();
+        const countEl = document.getElementById('install-count');
+        if (countEl) countEl.innerText = `Users: ${data.value || 0}`;
+    } catch (err) {
+        console.error('Counter error:', err);
+        const countEl = document.getElementById('install-count');
+        if (countEl) countEl.style.display = 'none'; 
+    }
+}
+
+// 初回起動時のみカウントを増やす関数
+async function handleFirstLaunchCount() {
+    const storageKey = 'f3d_counted';
+    // すでにカウント済みの場合は、取得のみ行う
+    if (localStorage.getItem(storageKey)) {
+        updateInstallDisplay();
+        return;
+    }
+
+    try {
+        // カウントを +1 する
+        await fetch(`https://api.countapi.xyz/hit/${COUNTAPI_NAMESPACE}/${COUNTAPI_KEY}`);
+        // カウント済みフラグを保存
+        localStorage.setItem(storageKey, 'true');
+        updateInstallDisplay();
+    } catch (err) {
+        console.error('Hit error:', err);
+        updateInstallDisplay();
+    }
+}
+
+// ページ読み込み時に実行
+document.addEventListener('DOMContentLoaded', handleFirstLaunchCount);
+
+
 // --- Service Worker & Config ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -522,7 +568,7 @@ const CONVERSION_RATES = {
 // --- Translations ---
 const TRANSLATIONS = {
     en: {
-        title: "3F4D+MD irrigation scheduler Pro",
+        title: "3F4D+MD Pro",
         hard_reset: "Hard Reset",
         rename: "Rename farmer",
         delete: "Delete farmer",
@@ -921,28 +967,44 @@ function getGPS() {
     }
 }
 
+// --- Update 3: Bengali Date Logic (BanglaText.com / 2019 Revision) ---
 function getBengaliDate(gregorianDateStr, forceBengali = false) {
     if(!gregorianDateStr) return "";
     const date = new Date(gregorianDateStr);
-    const bengaliMonthsEn = ["Boishakh", "Joishtho", "Ashar", "Srabon", "Bhadro", "Ashshin", "Kartik", "Ogrohayon", "Poush", "Magh", "Falgun", "Chaitra"];
-    const bengaliMonthsBn = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"];
-    const daysInMonth = [31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30, 30];
+    
+    // BanglaText.com / 2019 Revision logic: First 6 months are 31 days
+    let daysInMonth = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30];
+    
     const year = date.getFullYear();
+    // Leap year check: Adjust Falgun (index 10) to 31 days if Gregorian year is leap
     const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
-    if(isLeap) daysInMonth[10] = 31;
+    if(isLeap) daysInMonth[10] = 31; 
+
+    // Base date: April 14th
     let startOfBoishakh = new Date(year, 3, 14);
-    if(date < startOfBoishakh) startOfBoishakh = new Date(year - 1, 3, 14);
+    if(date < startOfBoishakh) {
+        startOfBoishakh = new Date(year - 1, 3, 14);
+        const prevYear = year - 1;
+        const isPrevLeap = (prevYear % 4 === 0 && prevYear % 100 !== 0) || (prevYear % 400 === 0);
+        if(isPrevLeap) daysInMonth[10] = 31;
+    }
+    
     const diffTime = date - startOfBoishakh;
     let dayOfYear = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
     let currentMonth = 0;
-    while(dayOfYear >= daysInMonth[currentMonth]) {
+    while(dayOfYear >= daysInMonth[currentMonth] && currentMonth < 11) {
         dayOfYear -= daysInMonth[currentMonth];
         currentMonth++;
     }
+    
     const benDay = dayOfYear + 1;
+    const bengaliMonthsEn = ["Boishakh", "Joishtho", "Ashar", "Srabon", "Bhadro", "Ashshin", "Kartik", "Ogrohayon", "Poush", "Magh", "Falgun", "Chaitra"];
+    const bengaliMonthsBn = ["বৈশাখ", "জ্যৈষ্ঠ", "আষাঢ়", "শ্রাবণ", "ভাদ্র", "আশ্বিন", "কার্তিক", "অগ্রহায়ণ", "পৌষ", "মাঘ", "ফাল্গুন", "চৈত্র"];
+
     if (currentLang === 'bn' || forceBengali) {
         const benMonth = bengaliMonthsBn[currentMonth];
-        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬７৮৯"[d]);
+        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
         return `${benDayStr} ${benMonth}`;
     } else {
         const benMonth = bengaliMonthsEn[currentMonth];
