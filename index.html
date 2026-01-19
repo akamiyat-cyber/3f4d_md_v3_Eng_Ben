@@ -166,9 +166,38 @@
         .map-controls {
             display: flex; gap: 5px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap;
         }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--ios-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
+
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="mt-2 fw-bold text-primary">Processing... 処理中...</div>
+</div>
 
 <div id="offline-badge" class="alert alert-warning py-1 m-0 text-center d-none" style="font-size: 11px; border-radius: 0;">
     Offline Mode: Data saved locally
@@ -369,10 +398,10 @@
                                     <tr><td>移植日</td><td>Transplanting</td><td>চারা রোপণ</td><td>Sowing + 40 days</td><td>বপন + ৪০ দিন</td></tr>
                                     <tr><td>ピタン開始</td><td>Pitan Start</td><td>পিতান শুরু</td><td>Transplanting + Pitan start after transplanting</td><td>চারা রোপণ + চারা রোপণের পর পিতান শুরু</td></tr>
                                     <tr><td>ピタン終了</td><td>Pitan End</td><td>পিতান শেষ</td><td>Pitan Start + Pitan Duration</td><td>পিতান শুরু + পিতানের সময়কাল</td></tr>
-                                    <tr><td>中干し開始</td><td>MD Start</td><td>এমডি শুরু</td><td>Sowing + MD End</td><td>বপন + বীজ বপনের পর এমডি শুরু</td></tr>
-                                    <tr><td>幼穂形成確認開始</td><td>Panicle Initiation Check start</td><td>শীষ আসার পরীক্ষা শুরু</td><td>MD start + Panicle Initiation check (day after MD Start)</td><td>এমডি শুরু + শীষ আসার পরীক্ষা (এমডি শুরুর পরের দিন)</td></tr>
-                                    <tr><td>中干し終了</td><td>MD End</td><td>এমডি শেষ</td><td>MD Start + MD Duration</td><td>এমডি শুরু + এমডি সময়কাল</td></tr>
-                                    <tr><td>中干し後灌漑開始</td><td>Flooding start (Panicle initiation)</td><td>প্লাবন শুরু (শীষ আসার সময়)</td><td>Heading - Flooding during panicle initiation before heading. ただし、Manual Young Panicle (1-2mm)に入力があればその値を用いる。</td><td>শীষ আসা - (শীষ আসার সময় প্লাবন সময়কাল) তবে, ম্যানুয়াল কচি শীষ (১-২ মিমি) 에 ইনপুট থাকলে সেই মান ব্যবহার করা হবে।</td></tr>
+                                    <tr><td>中干し開始</td><td>MD Start</td><td>エムডি শুরু</td><td>Sowing + MD End</td><td>বপন + বীজ বপনের পর এমডি শুরু</td></tr>
+                                    <tr><td>幼穂形成確認開始</td><td>Panicle Initiation Check start</td><td>শীষ আসার পরীক্ষা শুরু</td><td>MD start + Panicle Initiation check (day after MD Start)</td><td>エムডি শুরু + শীষ আসার পরীক্ষা (エムডি শুরুর পরের দিন)</td></tr>
+                                    <tr><td>中干し終了</td><td>MD End</td><td>エムডি শেষ</td><td>MD Start + MD Duration</td><td>エムডি শুরু + এমডি সময়কাল</td></tr>
+                                    <tr><td>中干し後灌漑開始</td><td>Flooding start (Panicle initiation)</td><td>প্লাবন শুরু (শীষ আসার সময়)</td><td>Heading - Flooding during panicle initiation before heading. ただし、Manual Young Panicle (1-2mm)に入力があればその値を用いてる。</td><td>শীষ আসা - (শীষ আসার সময় প্লাবন সময়কাল) তবে, ম্যানুয়াল কচি শীষ (১-২ মিমি) 에 ইনপুট থাকলে সেই মান ব্যবহার করা হবে।</td></tr>
                                     <tr><td>中干し最後の灌漑</td><td>Flooding end</td><td>প্লাবন শেষ</td><td>Flooding Start (Panicle initiation) - (Flooding during panicle initiation before heading  - 3F4D start before heading)</td><td>প্লাবন শুরু - (শীষ আসার সময় প্লাবন - ৩এফ৪ডি শুরু)</td></tr>
                                     <tr><td>3F4D　1サイクル目</td><td>3F4D_1 (Start)</td><td>৩এফ৪ডি_১ (শুরু)</td><td>Flooding end</td><td>প্লাবন শেষ</td></tr>
                                     <tr><td>3F4D　2サイクル目</td><td>3F4D_2</td><td>৩এফ৪ডি_২</td><td>3F4D_1 (Start) + 7</td><td>৩এফ৪ডি_১ + ৭ দিন</td></tr>
@@ -663,7 +692,7 @@ const TRANSLATIONS = {
         add_farmer: "নতুন কৃষক",
         basic_settings: "১. মৌলিক সেটিংস (দিন)",
         date_settings: "২. তারিখ সেটিংস (পরিবর্তনযোগ্য)",
-        logic_config: "৩. লজিক কনফিগারেশন (সূত্র)",
+        logic_config: "৩. লজック কনফিগারেশন (সূত্র)",
         reset_farmer: "রিসেট",
         // Tabs
         tab_table: "টেবিল তালিকা",
@@ -1056,6 +1085,9 @@ function getBengaliDate(gregorianDateStr, forceBengali = false) {
         return `${benDay} ${benMonth}`;
     }
 }
+
+function showLoading() { document.getElementById('loading-overlay').style.display = 'flex'; }
+function hideLoading() { document.getElementById('loading-overlay').style.display = 'none'; }
 
 function recalculate(triggerId) {
     if(!farmers[activeIdx]) return;
@@ -1526,15 +1558,19 @@ function zoomMap(delta) {
 }
 
 function downloadMap() {
+    showLoading();
     const wrapper = document.getElementById('slide_wrapper');
     const originalTransform = wrapper.style.transform;
     const todayStr = new Date().toISOString().slice(0,10);
     wrapper.style.transform = "scale(1)";
     html2canvas(wrapper).then(canvas => {
         // PNGからJPEG品質0.6に変更
-        canvas.toBlob(blob => { shareOrDownload(blob, `Map_${farmers[activeIdx].name}_${todayStr}.jpg`); }, 'image/jpeg', 0.6);
+        canvas.toBlob(blob => { 
+            hideLoading();
+            shareOrDownload(blob, `Map_${farmers[activeIdx].name}_${todayStr}.jpg`); 
+        }, 'image/jpeg', 0.6);
         wrapper.style.transform = originalTransform;
-    });
+    }).catch(() => hideLoading());
 }
 
 const mapContainer = document.getElementById('slide_wrapper');
@@ -1570,6 +1606,7 @@ if(mapContainer) {
 }
 
 function exportPDF() {
+    showLoading();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4');
     const f = farmers[activeIdx];
@@ -1593,14 +1630,16 @@ function exportPDF() {
         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         doc.addPage(); doc.text("Irrigation Map", 10, 10); doc.addImage(imgData, 'JPEG', 10, 20, pdfWidth, pdfHeight);
         const blob = doc.output('blob');
+        hideLoading();
         shareOrDownload(blob, `${f.name}_${todayStr}_Report.pdf`);
         wrapper.style.transform = originalTransform;
         if(wasHidden) { slideTab.classList.remove('show', 'active'); slideTab.style.display = ''; }
-    });
+    }).catch(() => hideLoading());
 }
 
 // --- 修正版：Calendar Export (Mobile Compatibility) ---
 async function exportCalendarPDF() {
+    showLoading();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4');
     const f = farmers[activeIdx];
@@ -1617,6 +1656,7 @@ async function exportCalendarPDF() {
     const uniqueMonths = [...new Set(allDates.map(d => d.substring(0, 7)))].sort();
 
     if (uniqueMonths.length === 0) {
+        hideLoading();
         alert("No scheduled events found.");
         return;
     }
@@ -1675,6 +1715,7 @@ async function exportCalendarPDF() {
     if(wasHidden) { calTab.classList.remove('show', 'active'); calTab.style.display = ''; }
 
     const blob = doc.output('blob');
+    hideLoading();
     shareOrDownload(blob, `${f.name}_${todayStr}_FullCalendar.pdf`);
 }
 
@@ -1692,6 +1733,7 @@ function exportIrrigationCSV() {
 
 function exportIrrigationPDF() {
     if(!irrigationChart) return alert("No chart available.");
+    showLoading();
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('landscape');
     const f = farmers[activeIdx];
@@ -1700,6 +1742,7 @@ function exportIrrigationPDF() {
     const imgData = irrigationChart.toBase64Image('image/jpeg', 0.6); 
     doc.addImage(imgData, 'JPEG', 10, 20, 280, 150);
     const blob = doc.output('blob');
+    hideLoading();
     shareOrDownload(blob, `${f.name}_${todayStr}_IrrigationGraph.pdf`);
 }
 
