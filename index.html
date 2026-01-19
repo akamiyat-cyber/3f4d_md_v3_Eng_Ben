@@ -207,7 +207,7 @@
                     <li><button class="dropdown-item fw-bold text-primary" onclick="exportCalendarPDF()">📅 Export Calendar PDF ক্যালেন্ডার PDF এক্সপোর্ট করুন</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header text-danger">Advanced</h6></li>
-                    <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All) হার্ড রিসেট (সব মুছে ফেলুন)</button></li>
+                    <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All) হার্ড रिसেট (সব মুছে ফেলুন)</button></li>
                 </ul>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importJSON(this)">
             </div>
@@ -256,8 +256,10 @@
                         <div class="col-12">
                             <label class="small fw-bold lbl-coords">GPS Coordinates</label>
                             <div class="input-group input-group-sm">
-                                <input type="text" id="prof_coords" class="form-control" readonly placeholder="Lat, Lng">
-                                <button class="btn btn-outline-secondary" type="button" onclick="getGPS()" id="btn-gps">📍 Get GPS</button>
+                                <input type="text" id="prof_coords" class="form-control" placeholder="Lat, Lng" onchange="updateCoordsManual(this.value)">
+                                <button class="btn btn-outline-secondary" type="button" onclick="getGPS()" id="btn-gps" title="Get GPS">📍</button>
+                                <button class="btn btn-outline-info" type="button" onclick="openGoogleMaps()" title="Open Google Maps">🗺️</button>
+                                <button class="btn btn-outline-danger" type="button" onclick="resetGPS()" title="Reset Coordinates">↺</button>
                             </div>
                         </div>
                     </div>
@@ -981,6 +983,34 @@ function getGPS() {
         alert("Geolocation not supported.");
     }
 }
+
+// --- NEW: Added GPS manual update, reset and Map functions ---
+function updateCoordsManual(val) {
+    if(farmers[activeIdx]) {
+        farmers[activeIdx].coordinates = val;
+        saveToLocal();
+    }
+}
+
+function resetGPS() {
+    if(confirm("Clear GPS coordinates?")) {
+        document.getElementById('prof_coords').value = "";
+        if(farmers[activeIdx]) {
+            farmers[activeIdx].coordinates = "";
+            saveToLocal();
+        }
+    }
+}
+
+function openGoogleMaps() {
+    const coords = document.getElementById('prof_coords').value;
+    if (coords && coords.trim() !== "") {
+        window.open(`https://www.google.com/maps?q=${encodeURIComponent(coords)}`, '_blank');
+    } else {
+        alert("Please set GPS coordinates first.");
+    }
+}
+// --- END NEW ---
 
 // --- Bengali Date Logic (BanglaText.com / 2019 Revision) ---
 function getBengaliDate(gregorianDateStr, forceBengali = false) {
@@ -1706,7 +1736,7 @@ function showAllSchedules() {
     let allEvents = [];
     const todayStr = formatDateISO(new Date());
 
-    farmers.forEach(f => {
+    farmers.forEach((f, idx) => { // farmersのindex(idx)を取得するように変更
         dateKeys.forEach(k => {
             if (f.dates && f.dates[k.id]) {
                 allEvents.push({
@@ -1715,7 +1745,8 @@ function showAllSchedules() {
                     village: f.village || "-",
                     eventKey: k.id,
                     eventName: t(k.id),
-                    done: f.completed && f.completed.includes(k.id)
+                    done: f.completed && f.completed.includes(k.id),
+                    farmerIdx: idx // 農家のindexを保存
                 });
             }
         });
@@ -1726,7 +1757,8 @@ function showAllSchedules() {
                 village: f.village || "-",
                 eventKey: 'yp',
                 eventName: t('yp_label'),
-                done: f.completed && f.completed.includes('yp')
+                done: f.completed && f.completed.includes('yp'),
+                farmerIdx: idx
             });
         }
     });
@@ -1741,13 +1773,19 @@ function showAllSchedules() {
             : '<span class="badge bg-secondary">Pending</span>';
         const highlightClass = isToday ? 'table-warning border-2 border-primary' : '';
         const rowId = isToday ? 'id="scroll-to-today"' : '';
+        // Farmer名をリンクに変更し、クリックイベントを追加
         const row = `
             <tr ${rowId} class="${highlightClass}">
                 <td style="white-space:nowrap;">
                     <strong>${isToday ? '★ ' : ''}${e.date}</strong><br>
                     <small class="text-muted">${benDate}</small>
                 </td>
-                <td><strong>${e.farmer}</strong><br><small class="text-muted">${e.village}</small></td>
+                <td>
+                    <a href="#" class="text-decoration-none fw-bold text-primary" onclick="switchToFarmer(${e.farmerIdx}); return false;">
+                        ${e.farmer}
+                    </a>
+                    <br><small class="text-muted">${e.village}</small>
+                </td>
                 <td>${e.eventName}</td>
                 <td>${statusBadge}</td>
             </tr>
@@ -1763,6 +1801,28 @@ function showAllSchedules() {
         }
     }, { once: true });
 }
+
+// --- NEW: Added Farmer switching function for the modal ---
+function switchToFarmer(idx) {
+    if (farmers[idx]) {
+        activeIdx = idx;
+        loadActiveFarmer();
+        renderFarmerTabs();
+        
+        // モーダルを閉じる
+        if (allSchedulesModalObj) {
+            allSchedulesModalObj.hide();
+        }
+        
+        // Table Listタブをアクティブにする
+        const tableTabTrigger = document.querySelector('.tab-lbl-table');
+        if (tableTabTrigger) {
+            const tab = new bootstrap.Tab(tableTabTrigger);
+            tab.show();
+        }
+    }
+}
+// --- END NEW ---
 
 document.addEventListener('DOMContentLoaded', () => {
     changeLanguage(localStorage.getItem('f3d_lang') || 'en');
@@ -1786,8 +1846,12 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <footer class="text-center mt-5 mb-4 text-secondary" style="font-size: 0.75rem; border-top: 1px solid #dee2e6; padding-top: 20px;">
-<p class="mb-1">This app was developed by Takehiro Kamiya (Univ. Tokyo).</p>
-<p class="mb-0">Use this application at your own risk.</p>
+    <div class="mb-3">
+        <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fhits.dwyl.com%2Fakamiyat-cyber%2F3f4d_md_v3_Eng_Ben.json%3Fcolor%3Dpink" alt="Users"/>
+    </div>
+    
+    <p class="mb-1">This app was developed by Takehiro Kamiya (Univ. Tokyo).</p>
+    <p class="mb-0">Use this application at your own risk.</p>
 </footer>
 
 </body>
