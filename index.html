@@ -554,7 +554,7 @@
 <script>
 // --- CounterAPI Settings (New Provider) ---
 const COUNTER_NAMESPACE = '3f4d_pro_scheduler_2026'; 
-const COUNTER_KEY = 'unique_users';
+const COUNTER_KEY = 'unique_Users (Only works when installed)';
 
 // カウンターの数値を更新して表示する関数
 async function updateInstallDisplay() {
@@ -565,11 +565,11 @@ async function updateInstallDisplay() {
         const data = await response.json();
         
         const countEl = document.getElementById('install-count');
-        if (countEl) countEl.innerText = `Users: ${data.count || 0}`;
+        if (countEl) countEl.innerText = `Users (Only works when installed): ${data.count || 0}`;
     } catch (err) {
         console.error('Counter error (Get):', err);
         const countEl = document.getElementById('install-count');
-        if (countEl) countEl.innerText = 'Users: ---';
+        if (countEl) countEl.innerText = 'Users (Only works when installed): ---';
     }
 }
 
@@ -588,7 +588,7 @@ async function handleFirstLaunchCount() {
             localStorage.setItem(storageKey, 'true');
             const data = await response.json();
             const countEl = document.getElementById('install-count');
-            if (countEl) countEl.innerText = `Users: ${data.count || 0}`;
+            if (countEl) countEl.innerText = `Users (Only works when installed): ${data.count || 0}`;
         } else {
             updateInstallDisplay();
         }
