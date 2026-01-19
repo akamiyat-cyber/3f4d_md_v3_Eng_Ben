@@ -1802,13 +1802,28 @@ function showAllSchedules() {
     }, { once: true });
 }
 
-// --- NEW: Added Farmer switching function for the modal ---
+// --- 修正版：農家切り替え機能（中央へのスクロール機能付き） ---
 function switchToFarmer(idx) {
     if (farmers[idx]) {
         activeIdx = idx;
         loadActiveFarmer();
-        renderFarmerTabs();
-        
+        renderFarmerTabs(); // タブを再描画して青くハイライトする
+
+        // ページ上部のナビゲーションバーで選択した農家を中央に移動させる
+        setTimeout(() => {
+            const container = document.getElementById('farmerTabs');
+            // activeIdxに対応するタブ要素を取得
+            const activeTab = container.querySelectorAll('.farmer-tab')[idx];
+            
+            if (activeTab) {
+                activeTab.scrollIntoView({
+                    behavior: 'smooth',  // スムーズに動かす
+                    block: 'nearest',    // 上下方向は動かさない
+                    inline: 'center'     // 横方向の中央に配置する
+                });
+            }
+        }, 100); // 描画の完了を少し待ってから実行
+
         // モーダルを閉じる
         if (allSchedulesModalObj) {
             allSchedulesModalObj.hide();
