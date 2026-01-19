@@ -179,9 +179,6 @@
         <h5 class="fw-bold text-primary m-0">
             3F4D+MD Pro
             <span style="font-size: 0.5em; color: #6c757d;">(JICA/JST)</span>
-            <span id="install-count" class="badge bg-light text-dark border ms-1" style="font-size: 0.4em; vertical-align: middle; font-weight: normal;">
-                Loading...
-            </span>
         </h5>
         
         <div class="d-flex gap-2 flex-wrap justify-content-end">
@@ -201,7 +198,7 @@
                     ⚙️
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li><h6 class="dropdown-header">Backup & Export　ব্যাকআপ এবং এক্সপোর্ট</h6></li>
+                    <li><h6 class="dropdown-header">Backup & Export　バックアップおよびエクスポート</h6></li>
                     <li><button class="dropdown-item" onclick="exportJSON('all')">📥 Backup All (JSON) সব ব্যাকআপ</button></li>
                     <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Backup Current (JSON) বর্তমান ব্যাকআপ</button></li>
                     <li><button class="dropdown-item" onclick="document.getElementById('importFile').click()">📤 Import JSON ইমপোর্ট করুন </button></li>
@@ -552,56 +549,6 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
 <script>
-// --- CounterAPI Settings (New Provider) ---
-const COUNTER_NAMESPACE = '3f4d_pro_scheduler_2026'; 
-const COUNTER_KEY = 'unique_Users (Only works when installed)';
-
-// カウンターの数値を更新して表示する関数
-async function updateInstallDisplay() {
-    try {
-        // 読み込み (Read)
-        const response = await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_KEY}`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        
-        const countEl = document.getElementById('install-count');
-        if (countEl) countEl.innerText = `Users (Only works when installed): ${data.count || 0}`;
-    } catch (err) {
-        console.error('Counter error (Get):', err);
-        const countEl = document.getElementById('install-count');
-        if (countEl) countEl.innerText = 'Users (Only works when installed): ---';
-    }
-}
-
-// 初回起動時のみカウントを増やす関数
-async function handleFirstLaunchCount() {
-    const storageKey = 'f3d_counted_v2'; 
-    if (localStorage.getItem(storageKey)) {
-        updateInstallDisplay();
-        return;
-    }
-
-    try {
-        // カウントを +1 する (Increment)
-        const response = await fetch(`https://api.counterapi.dev/v1/${COUNTER_NAMESPACE}/${COUNTER_KEY}/up`);
-        if (response.ok) {
-            localStorage.setItem(storageKey, 'true');
-            const data = await response.json();
-            const countEl = document.getElementById('install-count');
-            if (countEl) countEl.innerText = `Users (Only works when installed): ${data.count || 0}`;
-        } else {
-            updateInstallDisplay();
-        }
-    } catch (err) {
-        console.error('Counter error (Hit):', err);
-        updateInstallDisplay();
-    }
-}
-
-// ページ読み込み時に実行
-document.addEventListener('DOMContentLoaded', handleFirstLaunchCount);
-
-
 // --- Service Worker & Config ---
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1072,7 +1019,7 @@ function getBengaliDate(gregorianDateStr, forceBengali = false) {
 
     if (currentLang === 'bn' || forceBengali) {
         const benMonth = bengaliMonthsBn[currentMonth];
-        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬７৮৯"[d]);
         return `${benDayStr} ${benMonth}`;
     } else {
         const benMonth = bengaliMonthsEn[currentMonth];
@@ -1520,48 +1467,24 @@ function importJSON(input) {
                 const importedData = JSON.parse(e.target.result);
                 if (Array.isArray(importedData)) {
                     if(confirm("Restore FULL Backup? This replaces ALL current data.")) {
-                        // --- 修正箇所：ここから ---
-                        // カウントフラグと言語設定を一時的に変数に保存
-                        const counted = localStorage.getItem('f3d_counted_v2');
                         const lang = localStorage.getItem('f3d_lang');
-
-                        // データベースのクリアと再投入
                         await db.farmers.clear(); 
-                        await db.farmers.bulkPut(importedData);
-
-                        // localStorageをクリア
+                        await db.farmers.bulkPut(importedData); 
                         localStorage.clear();
-
-                        // 消したくない設定だけを元に戻す
-                        if (counted) localStorage.setItem('f3d_counted_v2', counted);
                         if (lang) localStorage.setItem('f3d_lang', lang);
-                        // --- 修正箇所：ここまで ---
-
                         location.reload();
                     }
                 } else if (typeof importedData === 'object' && importedData.id) {
-                    // 個別農家データのインポート時は既存のままでOK
-                    importedData.id = Date.now(); 
-                    importedData.name += " (Imp)";
-                    await db.farmers.put(importedData); 
-                    farmers.push(importedData);
-                    activeIdx = farmers.length - 1; 
-                    renderFarmerTabs(); 
-                    loadActiveFarmer(); 
-                    alert("Import Successful!");
-                } else { 
-                    alert("Invalid JSON."); 
-                }
-            } catch (err) { 
-                alert("Error parsing JSON."); 
-                console.error(err); 
-            }
+                    importedData.id = Date.now(); importedData.name += " (Imp)";
+                    await db.farmers.put(importedData); farmers.push(importedData);
+                    activeIdx = farmers.length - 1; renderFarmerTabs(); loadActiveFarmer(); alert("Import Successful!");
+                } else { alert("Invalid JSON."); }
+            } catch (err) { alert("Error parsing JSON."); console.error(err); }
             input.value = "";
         };
         reader.readAsText(input.files[0]);
     }
 }
-
 
 let currentScale = 1;
 function zoomMap(delta) {
@@ -1646,7 +1569,7 @@ function exportPDF() {
     });
 }
 
-// --- Enhanced Function: Calendar Export (Compressed) ---
+// --- 修正版：Calendar Export (Mobile Compatibility) ---
 async function exportCalendarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('l', 'mm', 'a4');
@@ -1672,15 +1595,31 @@ async function exportCalendarPDF() {
     const wasHidden = !calTab.classList.contains('show');
     if(wasHidden) { calTab.classList.add('show', 'active'); calTab.style.display = 'block'; }
     
+    // --- モバイル対応の重要修正箇所 ---
+    const calEl = document.getElementById('calendar');
+    const originalStyle = calEl.getAttribute('style'); 
+
+    // エクスポート用に表示を一時的に固定 (1200px幅)
+    calEl.style.width = '1200px'; 
+    calEl.style.maxWidth = 'none';
+    calEl.style.height = 'auto';
+    calEl.style.position = 'fixed'; // 画面外に飛ばしてレイアウト崩れを防ぐ
+    calEl.style.left = '-5000px';
+    calEl.style.top = '0';
+    // ----------------------------------
+
     for (let i = 0; i < uniqueMonths.length; i++) {
         const monthStr = uniqueMonths[i];
         calendar.gotoDate(monthStr + "-01");
-        calendar.updateSize();
-        await new Promise(r => setTimeout(r, 600));
+        calendar.updateSize(); // サイズ変更を適用
+        await new Promise(r => setTimeout(r, 800)); // 描画待ち時間を少し延長
 
-        const calEl = document.getElementById('calendar');
-        // scale: 1 に下げて軽量化
-        await html2canvas(calEl, { scale: 2 }).then(canvas => {
+        await html2canvas(calEl, { 
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            width: 1200 // キャンバスの幅を明示的に指定
+        }).then(canvas => {
             if (i > 0) doc.addPage();
             doc.setFontSize(14);
             doc.text(`${f.name} - ${monthStr}`, 10, 12);
@@ -1688,7 +1627,6 @@ async function exportCalendarPDF() {
             const profileText = `Village: ${f.village || '-'} | Variety: ${f.variety || '-'} | Size: ${f.fieldSize || '-'} ${f.fieldSizeUnit || ''} | GPS: ${f.coordinates || '-'}`;
             doc.text(profileText, 10, 18);
 
-            // PNGからJPEGに変更し、品質を0.8に設定
             const imgData = canvas.toDataURL('image/jpeg', 0.8);
             const pdfWidth = doc.internal.pageSize.getWidth();
             const margin = 10;
@@ -1699,7 +1637,11 @@ async function exportCalendarPDF() {
         });
     }
 
+    // 元の状態に戻す
+    calEl.setAttribute('style', originalStyle || ''); 
     calendar.gotoDate(originalDate);
+    calendar.updateSize();
+
     if(wasHidden) { calTab.classList.remove('show', 'active'); calTab.style.display = ''; }
 
     const blob = doc.output('blob');
@@ -1725,7 +1667,6 @@ function exportIrrigationPDF() {
     const f = farmers[activeIdx];
     const todayStr = new Date().toISOString().slice(0,10);
     doc.setFontSize(16); doc.text(`Irrigation Graph: ${f.name}`, 10, 10);
-    // グラフ画像も圧縮設定で取得
     const imgData = irrigationChart.toBase64Image('image/jpeg', 0.6); 
     doc.addImage(imgData, 'JPEG', 10, 20, 280, 150);
     const blob = doc.output('blob');
@@ -1757,21 +1698,15 @@ function checkNotifications() {
 
 // NEW: Function to show all schedules (with Today highlighting)
 function showAllSchedules() {
-    // Lazy initialize modal
     if (!allSchedulesModalObj) {
         allSchedulesModalObj = new bootstrap.Modal(document.getElementById('allSchedulesModal'));
     }
-
     const tbody = document.getElementById('allSchedulesBody');
     tbody.innerHTML = "";
-
     let allEvents = [];
-    // 今日の日付を取得 (YYYY-MM-DD形式)
     const todayStr = formatDateISO(new Date());
 
-    // Collect all events from all farmers
     farmers.forEach(f => {
-        // Standard date keys
         dateKeys.forEach(k => {
             if (f.dates && f.dates[k.id]) {
                 allEvents.push({
@@ -1784,7 +1719,6 @@ function showAllSchedules() {
                 });
             }
         });
-        // YP Check (Manual)
         if (f.use_yp && f.dates['yp']) {
             allEvents.push({
                 date: f.dates['yp'],
@@ -1797,22 +1731,16 @@ function showAllSchedules() {
         }
     });
 
-    // Sort by date ascending
     allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    // Render Rows
     allEvents.forEach(e => {
         const benDate = getBengaliDate(e.date);
-        const isToday = e.date === todayStr; // 今日かどうか判定
-        
+        const isToday = e.date === todayStr;
         const statusBadge = e.done 
             ? '<span class="badge bg-success">Done</span>' 
             : '<span class="badge bg-secondary">Pending</span>';
-        
-        // 今日なら背景色を変更し、IDを付与する
         const highlightClass = isToday ? 'table-warning border-2 border-primary' : '';
         const rowId = isToday ? 'id="scroll-to-today"' : '';
-
         const row = `
             <tr ${rowId} class="${highlightClass}">
                 <td style="white-space:nowrap;">
@@ -1828,8 +1756,6 @@ function showAllSchedules() {
     });
 
     allSchedulesModalObj.show();
-
-    // モーダルが表示された後に今日の日付までスクロール
     document.getElementById('allSchedulesModal').addEventListener('shown.bs.modal', function () {
         const todayRow = document.getElementById('scroll-to-today');
         if (todayRow) {
