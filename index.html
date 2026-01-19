@@ -1520,19 +1520,48 @@ function importJSON(input) {
                 const importedData = JSON.parse(e.target.result);
                 if (Array.isArray(importedData)) {
                     if(confirm("Restore FULL Backup? This replaces ALL current data.")) {
-                        await db.farmers.clear(); await db.farmers.bulkPut(importedData); location.reload();
+                        // --- 修正箇所：ここから ---
+                        // カウントフラグと言語設定を一時的に変数に保存
+                        const counted = localStorage.getItem('f3d_counted_v2');
+                        const lang = localStorage.getItem('f3d_lang');
+
+                        // データベースのクリアと再投入
+                        await db.farmers.clear(); 
+                        await db.farmers.bulkPut(importedData);
+
+                        // localStorageをクリア
+                        localStorage.clear();
+
+                        // 消したくない設定だけを元に戻す
+                        if (counted) localStorage.setItem('f3d_counted_v2', counted);
+                        if (lang) localStorage.setItem('f3d_lang', lang);
+                        // --- 修正箇所：ここまで ---
+
+                        location.reload();
                     }
                 } else if (typeof importedData === 'object' && importedData.id) {
-                    importedData.id = Date.now(); importedData.name += " (Imp)";
-                    await db.farmers.put(importedData); farmers.push(importedData);
-                    activeIdx = farmers.length - 1; renderFarmerTabs(); loadActiveFarmer(); alert("Import Successful!");
-                } else { alert("Invalid JSON."); }
-            } catch (err) { alert("Error parsing JSON."); console.error(err); }
+                    // 個別農家データのインポート時は既存のままでOK
+                    importedData.id = Date.now(); 
+                    importedData.name += " (Imp)";
+                    await db.farmers.put(importedData); 
+                    farmers.push(importedData);
+                    activeIdx = farmers.length - 1; 
+                    renderFarmerTabs(); 
+                    loadActiveFarmer(); 
+                    alert("Import Successful!");
+                } else { 
+                    alert("Invalid JSON."); 
+                }
+            } catch (err) { 
+                alert("Error parsing JSON."); 
+                console.error(err); 
+            }
             input.value = "";
         };
         reader.readAsText(input.files[0]);
     }
 }
+
 
 let currentScale = 1;
 function zoomMap(delta) {
