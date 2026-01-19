@@ -1,15 +1,12 @@
 {
-  "name": "3F4D Irrigation Pro",
+  "name": "3F4D+MD Pro Scheduler",
   "short_name": "3F4D Pro",
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f7f6",
   "theme_color": "#007aff",
   "icons": [
-    {
-      "src": "icon.png",
-      "sizes": "1024x1024",
-      "type": "image/png"
-    }
+    { "src": "icon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png" }
   ]
 }

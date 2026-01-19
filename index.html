@@ -41,30 +41,88 @@
         }
         
         .header-section { background: #fff; padding: 10px; border-bottom: 1px solid #dee2e6; position: sticky; top: 0; z-index: 1050; }
-        .farmer-nav { 
-        display: flex; 
-        align-items: center; 
-        gap: 10px; 
-        overflow-x: auto; 
-        margin-top: 5px;
-        width: 100%;                        /* 横幅を一杯に広げる */
-        -webkit-overflow-scrolling: touch;  /* iOSでのスクロールを滑らかにする */
-        padding-bottom: 5px;                /* スクロール時に下が隠れないよう余白を追加 */
-       }
-       
-        .farmer-tab { 
-        padding: 5px 15px; 
-        border-radius: 20px; 
-        border: 1px solid #ddd; 
-        background: #f8f9fa; 
-        white-space: nowrap; 
-        cursor: pointer; 
-        transition: 0.2s;
-        flex-shrink: 0; /* 重要：タブのサイズを維持し、縮まないように固定する */
+
+        /* --- New Navigation Styles (2-Tier) --- */
+        .nav-scroll-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+            padding: 5px 2px;
+        }
+
+        /* Village Nav (Top Tier) */
+        .village-nav {
+            background-color: #eef2f5;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 0;
+        }
+
+        .village-tab {
+            padding: 6px 16px;
+            border-radius: 8px 8px 0 0;
+            background: #e2e6ea;
+            border: 1px solid #ced4da;
+            border-bottom: none;
+            white-space: nowrap;
+            cursor: pointer;
+            font-weight: bold;
+            color: #495057;
+            flex-shrink: 0;
+            transition: 0.2s;
+            font-size: 0.9rem;
         }
         
-        .farmer-tab.active { background: var(--ios-accent); color: white; border-color: var(--ios-accent); font-weight: bold; }
-        .btn-add-farmer { border-radius: 50%; width: 32px; height: 32px; padding: 0; font-weight: bold; flex-shrink: 0; }
+        .village-tab.active {
+            background: #fff;
+            color: var(--ios-accent);
+            border-color: #dee2e6;
+            border-bottom: 2px solid #fff;
+            margin-bottom: -1px;
+            z-index: 10;
+        }
+
+        /* Farmer Nav (Bottom Tier) */
+        .farmer-sub-nav {
+            background-color: #fff;
+            padding-top: 8px;
+        }
+
+        .farmer-tab { 
+            padding: 5px 12px; 
+            border-radius: 20px; 
+            border: 1px solid #ddd; 
+            background: #fff; 
+            white-space: nowrap; 
+            cursor: pointer; 
+            transition: 0.2s;
+            flex-shrink: 0;
+            font-size: 0.85rem;
+        }
+        
+        .farmer-tab.active { 
+            background: var(--ios-accent); 
+            color: white; 
+            border-color: var(--ios-accent); 
+            font-weight: bold; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn-add-item { 
+            border-radius: 50%; 
+            width: 28px; 
+            height: 28px; 
+            padding: 0; 
+            font-weight: bold; 
+            flex-shrink: 0; 
+            line-height: 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+        }
+        /* -------------------------------------- */
 
         .config-panel { max-height: calc(100vh - 150px); overflow-y: auto; padding: 15px; background: white; border-right: 1px solid #dee2e6; }
         .main-panel { padding: 15px; }
@@ -84,32 +142,10 @@
         .date-invalid { background-color: var(--warning-bg) !important; border: 1px solid #dc3545 !important; }
         .row-error { background-color: var(--order-error-bg) !important; }
         
-        /* --- カレンダーのフォントサイズ拡大設定 --- */
-        .fc {
-            font-size: 1.1rem !important; /* 全体の基本サイズ */
-        }
-
-        /* 日付の数字をさらに大きく強調 */
-        .fc-daygrid-day-number {
-            font-size: 1.2rem !important;
-            font-weight: bold !important;
-            padding: 6px !important;
-        }
-
-        /* ベンガル暦の文字サイズを調整 */
-        .ben-cal-date {
-            font-size: 1.2rem !important; 
-            margin-top: 2px !important;
-            color: #d63384;
-        }
-
-        /* 予定（イベント）の文字サイズと折り返し設定 */
-        .fc-event-title {
-            font-size: 0.9rem !important;
-            white-space: normal !important; 
-            line-height: 1.2 !important;
-        }
-        /* --- ここまで --- */
+        .fc { font-size: 1.1rem !important; }
+        .fc-daygrid-day-number { font-size: 1.2rem !important; font-weight: bold !important; padding: 6px !important; }
+        .ben-cal-date { font-size: 1.2rem !important; margin-top: 2px !important; color: #d63384; }
+        .fc-event-title { font-size: 0.9rem !important; white-space: normal !important; line-height: 1.2 !important; }
 
         .yp-toggle-container { border: 2px solid var(--border-pi); border-radius: 8px; padding: 10px; background-color: #fffdf5; margin: 10px 0; }
         #calendar { background: white; padding: 10px; border-radius: 12px; min-height: 450px; }
@@ -120,76 +156,31 @@
         .memo-img-preview { max-width: 100px; max-height: 100px; display: block; margin-top: 5px; border-radius: 4px; border: 1px solid #ddd; cursor: pointer; }
 
         .btn-reset-item { padding: 0 5px; font-size: 10px; line-height: 1.5; margin-left: 5px; }
-
-        /* Indicator Styles */
         .duration-bar { display: flex; height: 6px; border-radius: 3px; background: #eee; margin-top: 4px; overflow: hidden; width: 60px; }
         .bar-flood { background-color: var(--color-flood); height: 100%; }
         .bar-drain { background-color: #dee2e6; height: 100%; }
 
-        /* Slide View Styles */
-        .slide-scroll-area { 
-            width: 100%; 
-            overflow: auto; 
-            border: 1px solid #eee; 
-            border-radius: 8px; 
-            position: relative;
-        }
-        .slide-container { 
-            position: relative; 
-            display: inline-block; 
-            margin: 0 auto; 
-            transform-origin: top left;
-            transition: transform 0.2s ease-out;
-        }
+        .slide-scroll-area { width: 100%; overflow: auto; border: 1px solid #eee; border-radius: 8px; position: relative; }
+        .slide-container { position: relative; display: inline-block; margin: 0 auto; transform-origin: top left; transition: transform 0.2s ease-out; }
         .slide-img { width: 1000px; max-width: none; height: auto; display: block; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .date-marker {
-            position: absolute;
-            transform: translate(-50%, 0);
-            background-color: rgba(255, 255, 255, 0.95);
-            border: 1px solid #dc3545;
-            color: #dc3545;
-            padding: 1px 4px;
-            font-weight: bold;
-            border-radius: 4px;
-            white-space: nowrap;
-            pointer-events: none;
-            z-index: 10;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            font-size: clamp(18px, 2vw, 24px);
-        }
+        .date-marker { position: absolute; transform: translate(-50%, 0); background-color: rgba(255, 255, 255, 0.95); border: 1px solid #dc3545; color: #dc3545; padding: 1px 4px; font-weight: bold; border-radius: 4px; white-space: nowrap; pointer-events: none; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: clamp(18px, 2vw, 24px); }
 
-        /* Logic Viewer Table Styles */
         .logic-viewer-table { font-size: 0.7rem; color: #4b5563; }
         .logic-viewer-table th { background-color: #f3f4f6; color: #374151; font-weight: 600; white-space: nowrap; }
         .logic-viewer-table td { border-bottom: 1px solid #f1f5f9; padding: 4px 8px !important; vertical-align: middle; }
         
-        .map-controls {
-            display: flex; gap: 5px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap;
+        .map-controls { display: flex; gap: 5px; justify-content: center; margin-bottom: 10px; flex-wrap: wrap; }
+
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--ios-accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* 曜日のヘッダー部分のアンダーラインを消す */
+        .fc-col-header-cell-cushion {
+            text-decoration: none !important;
+            color: inherit; /* 文字色を親要素に合わせる場合 */
         }
 
-        /* Loading Overlay */
-        #loading-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--ios-accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body>
@@ -235,23 +226,35 @@
                     <li><button class="dropdown-item fw-bold text-danger" onclick="exportPDF()">📄 Export PDF Report PDF রিপোর্ট এক্সপোর্ট করুন</button></li>
                     <li><button class="dropdown-item fw-bold text-primary" onclick="exportCalendarPDF()">📅 Export Calendar PDF ক্যালেন্ডার PDF এক্সপোর্ট করুন</button></li>
                     <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header text-danger">Manage Structure</h6></li>
+                    <li><button class="dropdown-item text-danger" onclick="deleteVillage()">🗑️ Delete Village (গ্রাম সহ মুছে ফেলুন)</button></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header text-danger">Advanced</h6></li>
                     <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All) হার্ড रिसেট (সব মুছে ফেলুন)</button></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Notification Test</h6></li>
+                    <li>
+                        <button class="dropdown-item btn-label-test-notif" onclick="sendTestNotification()">
+                            🔔 Send Test Notification
+                        </button>
+                    </li>
                 </ul>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importJSON(this)">
             </div>
         </div>
     </div>
     
-    <div class="d-flex flex-column align-items-center mt-2">
-        <div class="farmer-nav" id="farmerTabs">
-            <button class="btn btn-outline-primary btn-add-farmer" onclick="addNewFarmer()">+</button>
-        </div>
+    <div id="nav-container-wrapper" class="d-flex flex-column mt-1">
+        <div class="nav-scroll-container village-nav" id="villageTabs">
+            </div>
         
-        <div class="d-flex gap-2 mt-2 flex-wrap justify-content-center">
-            <button class="btn btn-sm btn-outline-secondary py-0 px-2 btn-label-rename" onclick="renameFarmer()" style="font-size: 10px;">Rename farmer</button>
-            <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-label-delete" onclick="deleteFarmer()" style="font-size: 10px;">Delete farmer</button>
-        </div>
+        <div class="nav-scroll-container farmer-sub-nav" id="farmerTabs">
+            </div>
+    </div>
+    
+    <div class="d-flex gap-2 mt-2 flex-wrap justify-content-center">
+        <button class="btn btn-sm btn-outline-secondary py-0 px-2 btn-label-rename" onclick="renameFarmer()" style="font-size: 10px;">Rename farmer</button>
+        <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-label-delete" onclick="deleteFarmer()" style="font-size: 10px;">Delete farmer</button>
     </div>
 </div>
 
@@ -455,10 +458,10 @@
 
                 <div class="tab-pane fade" id="tab-graph">
                     <div class="card p-3">
-                        <h6 class="fw-bold text-secondary mb-3 tab-lbl-graph">Irrigation Time Graph</h6>
+                        <h6 class="fw-bold text-secondary mb-3 tab-lbl-graph">Irrigation Time Graph সেচের সময়ের গ্রাফ</h6>
                         <div class="d-flex justify-content-end gap-2 mb-2">
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn btn-sm btn-primary dropdown-toggle btn-label-share" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     Share
                                 </button>
                                 <ul class="dropdown-menu">
@@ -471,28 +474,32 @@
                     </div>
                 </div>
 
-                <div class="tab-pane fade" id="tab-slide">
+                <<div class="tab-pane fade" id="tab-slide">
                     <div class="card p-2 text-center" style="background: #fff; min-height: 400px;" id="tour-step-4">
-                        <h6 class="fw-bold text-secondary mb-3">Irrigation Schedule Map</h6>
+                        <h6 class="fw-bold text-secondary mb-3">সেচ পরিকল্পনার মানচিত্র (Irrigation Plan Map)</h6>
                         
-                        <div class="map-controls">
-                            <button class="btn btn-sm btn-outline-secondary" onclick="zoomMap(0.1)">🔎 +</button>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="zoomMap(-0.1)">🔎 -</button>
-                            <button class="btn btn-sm btn-primary" onclick="downloadMap()">Download Map (Image)</button>
+                        <div class="d-flex justify-content-end gap-2 mb-2 pe-2">
+                            <div class="btn-group shadow-sm">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="zoomMap(0.1)" title="Zoom In">🔎 +</button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="zoomMap(-0.1)" title="Zoom Out">🔎 -</button>
+                            </div>
+                            <button class="btn btn-sm btn-primary shadow-sm btn-label-download-map" onclick="downloadMap()">
+                                মানচিত্র ডাউনলোড করুন (ছবি)
+                            </button>
                         </div>
-
+                
                         <div class="slide-scroll-area">
                             <div class="slide-container" id="slide_wrapper">
                                 <img src="slide_en_water.png" class="slide-img" alt="Slide Image" onerror="document.getElementById('slide-error').classList.remove('d-none'); this.style.display='none';">
                                 <div id="slide_markers"></div>
                             </div>
                         </div>
-
+                
                         <div id="slide-error" class="alert alert-danger d-none mt-5">
                             <strong>Image not found!</strong><br>
                             Please ensure <code>slide_en_water.png</code> is in the same folder.
                         </div>
-
+                
                         <div class="mt-3 text-muted" style="font-size: 0.75rem;">
                             *Dates are automatically mapped.
                         </div>
@@ -682,7 +689,15 @@ const TRANSLATIONS = {
         notif_title: "3F4D Reminder",
         notif_msg: "You have events scheduled for tomorrow!",
         btn_export_csv: "Export CSV",
-        btn_export_pdf: "Export Graph PDF"
+        btn_export_pdf: "Export Graph PDF",
+        btn_download_map: "Download Map (Image)",
+        btn_share: "Share",
+        notif_title: "3F4D Pro Reminder",
+        notif_today: "Today's task:",
+        notif_tomorrow: "Tomorrow's task:",
+        notif_no_tasks: "No tasks for today",
+        btn_test_notif: "Send Test Notification",
+        lbl_log_irr: "Irrigation"
     },
     bn: {
         title: "৩এফ৪ডি প্রো সময়সূচী",
@@ -692,7 +707,7 @@ const TRANSLATIONS = {
         add_farmer: "নতুন কৃষক",
         basic_settings: "১. মৌলিক সেটিংস (দিন)",
         date_settings: "২. তারিখ সেটিংস (পরিবর্তনযোগ্য)",
-        logic_config: "৩. লজック কনফিগারেশন (সূত্র)",
+        logic_config: "৩. লজিক কনফিগারেশন (সূত্র)",
         reset_farmer: "রিসেট",
         // Tabs
         tab_table: "টেবিল তালিকা",
@@ -755,7 +770,15 @@ const TRANSLATIONS = {
         notif_title: "৩এফ৪ডি রিমাইন্ডার",
         notif_msg: "আগামীকাল আপনার কিছু কাজ আছে!",
         btn_export_csv: "CSV এক্সপোর্ট",
-        btn_export_pdf: "গ্রাফ PDF এক্সপোর্ট"
+        btn_export_pdf: "গ্রাফ PDF এক্সপোর্ট",
+        btn_download_map: "মানচিত্র ডাউনলোড করুন (ছবি)",
+        btn_share: "শেয়ার করুন",
+        notif_title: "৩এফ৪ডি রিমাইন্ডার", // 3F4D Reminder
+        notif_today: "আজকের কাজ:",        // Today's task:
+        notif_tomorrow: "আগামীকালের কাজ:", // Tomorrow's task:
+        notif_no_tasks: "আজ কোনো কাজ নেই", // No tasks today
+        btn_test_notif: "টেস্ট নোটিফিকেশন পাঠান",
+        lbl_log_irr: "সেচ"
     }
 };
 
@@ -836,6 +859,12 @@ function changeLanguage(lang) {
         const el = document.querySelector('.' + cls);
         if(el) el.innerText = t(key);
     }
+    
+    const downloadBtn = document.querySelector('.btn-label-download-map');
+    if(downloadBtn) downloadBtn.innerText = t('btn_download_map');
+
+    const shareBtn = document.querySelector('.btn-label-share');
+    if(shareBtn) shareBtn.innerText = t('btn_share');
 
     updateSizeUnitOptions();
     initInputs(); 
@@ -862,15 +891,19 @@ function updateSizeUnitOptions() {
     } else {
         sel.value = currentLang === 'en' ? 'ha' : 'bigha';
     }
+
+    const testNotifBtn = document.querySelector('.btn-label-test-notif');
+    if(testNotifBtn) testNotifBtn.innerText = "🔔 " + t('btn_test_notif');
+    
 }
 
 let farmers = []; 
 let activeIdx = 0;
+let activeVillage = null; // 現在選択中の村
 let calendar;
 let memoModal;
 let tempPhotoData = null;
 let irrigationChart = null;
-// NEW: Variable for All Schedules Modal
 let allSchedulesModalObj;
 
 const dateKeys = [
@@ -919,7 +952,7 @@ async function initApp() {
         farmers = await db.farmers.toArray();
         if (farmers.length === 0) {
             farmers = [{
-                id: Date.now(), name: "Farmer 1", village: "", 
+                id: Date.now(), name: "Farmer 1", village: "Village 1", 
                 settings: { ...DEFAULT_SETTINGS },
                 dates: {}, manualKeys: [], use_yp: false, memos: {}, photos: {}, completed: [], autoDates: {},
                 variety: "", fieldSize: "", fieldSizeUnit: "ha", coordinates: "", irrigation: {}
@@ -927,7 +960,10 @@ async function initApp() {
             await db.farmers.put(farmers[0]);
         }
         activeIdx = 0;
-        renderFarmerTabs();
+        // 初期村設定
+        activeVillage = farmers[activeIdx].village || "Unassigned";
+
+        renderNav();
         loadActiveFarmer();
         checkNotifications(); 
     } catch (e) {
@@ -995,8 +1031,9 @@ function updateProfile() {
     f.variety = document.getElementById('prof_variety').value;
     f.fieldSize = document.getElementById('prof_size').value;
     f.fieldSizeUnit = document.getElementById('prof_size_unit').value;
-    renderFarmerTabs(); 
     saveToLocal();
+    // 村名変更時にタブ構造を再描画
+    renderNav();
 }
 
 function getGPS() {
@@ -1013,7 +1050,6 @@ function getGPS() {
     }
 }
 
-// --- NEW: Added GPS manual update, reset and Map functions ---
 function updateCoordsManual(val) {
     if(farmers[activeIdx]) {
         farmers[activeIdx].coordinates = val;
@@ -1039,22 +1075,17 @@ function openGoogleMaps() {
         alert("Please set GPS coordinates first.");
     }
 }
-// --- END NEW ---
 
-// --- Bengali Date Logic (BanglaText.com / 2019 Revision) ---
 function getBengaliDate(gregorianDateStr, forceBengali = false) {
     if(!gregorianDateStr) return "";
     const date = new Date(gregorianDateStr);
     
-    // BanglaText.com / 2019 Revision logic: First 6 months are 31 days
     let daysInMonth = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 30];
     
     const year = date.getFullYear();
-    // Leap year check: Adjust Falgun (index 10) to 31 days if Gregorian year is leap
     const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
     if(isLeap) daysInMonth[10] = 31; 
 
-    // Base date: April 14th
     let startOfBoishakh = new Date(year, 3, 14);
     if(date < startOfBoishakh) {
         startOfBoishakh = new Date(year - 1, 3, 14);
@@ -1215,7 +1246,10 @@ function refreshViews() {
         if(hasPhoto) events.push({ title: "📷", start: date, color: '#17a2b8', textColor: '#fff' });
         if(irr) events.push({ title: `💧 ${irr.value}${irr.unit}`, start: date, color: '#0dcaf0', textColor: '#000' });
         let content = `<div class="memo-list-item"><strong>${date}:</strong><br>`;
-        if(irr) content += `<span class="badge bg-info text-dark">Irrigation: ${irr.value} ${irr.unit}</span><br>`;
+        if(irr) {
+            const unitLabel = irr.unit === 'min' ? t('unit_min') : t('unit_hr');
+            content += `<span class="badge bg-info text-dark">${t('lbl_log_irr')}: ${irr.value} ${unitLabel}</span><br>`;
+        }
         if(hasMemo) content += `<span>${f.memos[date]}</span><br>`;
         if(hasPhoto) content += `<img src="${f.photos[date]}" class="memo-img-preview" onclick="openPhotoModal('${date}')">`;
         content += `</div>`;
@@ -1359,32 +1393,205 @@ function updateFromManual(id) {
     saveToLocal(); recalculate(id);
 }
 
-function addNewFarmer() {
-    const name = prompt("Enter Farmer/Field Name:");
-    if (name) { 
-        const newFarmer = { 
-            id: Date.now(), name, village: "", 
-            settings: { ...DEFAULT_SETTINGS }, 
-            dates: {}, manualKeys: [], use_yp: false, memos: {}, photos: {}, completed: [], autoDates: {},
-            variety: "", fieldSize: "", fieldSizeUnit: "ha", coordinates: "", irrigation: {}
-        };
-        farmers.push(newFarmer); 
-        db.farmers.put(newFarmer); 
-        activeIdx = farmers.length-1; 
-        renderFarmerTabs(); 
-        loadActiveFarmer(); 
+// ==========================================
+// ★ New Navigation & Structure Logic
+// ==========================================
+
+// 1. ナビゲーション描画 (renderFarmerTabsの置換)
+function renderNav() {
+    const vContainer = document.getElementById('villageTabs');
+    const fContainer = document.getElementById('farmerTabs');
+    vContainer.innerHTML = "";
+    fContainer.innerHTML = "";
+
+    // 1. ユニークな村リストを取得
+    const villages = [...new Set(farmers.map(f => f.village || "Unassigned"))].sort();
+
+    // 2. アクティブな村の整合性チェック
+    if (farmers[activeIdx]) {
+        activeVillage = farmers[activeIdx].village || "Unassigned";
+    } else if (!activeVillage || !villages.includes(activeVillage)) {
+        activeVillage = villages.length > 0 ? villages[0] : null;
+    }
+
+    // --------------------------------------
+    // 3. 上段：村ナビゲーション
+    // --------------------------------------
+    
+    // ★【修正】「+ Village」ボタンを一番最初に追加
+    const addVBtn = document.createElement('button');
+    addVBtn.className = "btn btn-outline-secondary btn-add-item me-2"; // me-2に変更して右に余白
+    addVBtn.innerText = "+";
+    addVBtn.title = "Add New Village";
+    addVBtn.onclick = addNewVillage;
+    vContainer.appendChild(addVBtn);
+
+    if (villages.length > 0) {
+        villages.forEach(vName => {
+            const vBtn = document.createElement('div');
+            vBtn.className = `village-tab ${vName === activeVillage ? 'active' : ''}`;
+            vBtn.innerText = vName;
+            vBtn.id = `v-tab-${vName.replace(/\s+/g, '_')}`;
+            vBtn.onclick = () => {
+                activeVillage = vName;
+                const firstFarmerIdx = farmers.findIndex(f => (f.village || "Unassigned") === vName);
+                if (firstFarmerIdx !== -1) {
+                    activeIdx = firstFarmerIdx;
+                    loadActiveFarmer();
+                    renderNav();
+                }
+            };
+            vContainer.appendChild(vBtn);
+        });
+    }
+
+    // --------------------------------------
+    // 4. 下段：農家ナビゲーション
+    // --------------------------------------
+    if (activeVillage) {
+        // ★【修正】「+ Farmer」ボタンを一番最初に追加
+        const addFBtn = document.createElement('button');
+        addFBtn.className = "btn btn-outline-primary btn-add-item me-2"; // me-2に変更して右に余白
+        addFBtn.innerText = "+";
+        addFBtn.title = "Add Farmer to this Village";
+        addFBtn.onclick = addNewFarmer;
+        fContainer.appendChild(addFBtn);
+
+        const villageFarmers = farmers
+            .map((f, index) => ({ ...f, originalIndex: index }))
+            .filter(f => (f.village || "Unassigned") === activeVillage);
+
+        villageFarmers.forEach(f => {
+            const fBtn = document.createElement('div');
+            fBtn.className = `farmer-tab ${f.originalIndex === activeIdx ? 'active' : ''}`;
+            fBtn.innerText = f.name;
+            fBtn.onclick = () => {
+                activeIdx = f.originalIndex; 
+                loadActiveFarmer();
+                renderNav(); 
+            };
+            fContainer.appendChild(fBtn);
+        });
     }
 }
 
+// 既存の関数名互換用
 function renderFarmerTabs() {
-    const container = document.getElementById('farmerTabs');
-    container.innerHTML = `<button class="btn btn-outline-primary btn-add-farmer" onclick="addNewFarmer()">+</button>`;
-    farmers.forEach((f, idx) => {
-        const btn = document.createElement('div');
-        btn.className = `farmer-tab ${idx === activeIdx ? 'active' : ''}`;
-        btn.innerText = f.name;
-        btn.onclick = () => { activeIdx = idx; loadActiveFarmer(); renderFarmerTabs(); };
-        container.insertBefore(btn, container.lastChild); 
+    renderNav();
+}
+
+// 2. 追加・削除機能
+
+function addNewVillage() {
+    const vName = prompt("Enter New Village Name:");
+    if (!vName) return;
+
+    // 既存チェック
+    const exists = farmers.some(f => f.village === vName);
+    if (exists) {
+        alert("Village already exists!");
+        activeVillage = vName;
+        renderNav();
+        return;
+    }
+    createFarmerInVillage(vName, "Farmer 1");
+}
+
+function addNewFarmer() {
+    if (!activeVillage) {
+        alert("Please create or select a village first.");
+        return;
+    }
+    const count = farmers.filter(f => (f.village || "Unassigned") === activeVillage).length;
+    const defaultName = `Farmer ${count + 1}`;
+    
+    const fName = prompt(`Enter Farmer Name for "${activeVillage}":`, defaultName);
+    if (fName) {
+        const villageToSave = activeVillage === "Unassigned" ? "" : activeVillage;
+        createFarmerInVillage(villageToSave, fName);
+    }
+}
+
+function createFarmerInVillage(villageName, farmerName) {
+    const newFarmer = { 
+        id: Date.now(), 
+        name: farmerName, 
+        village: villageName, 
+        settings: { ...DEFAULT_SETTINGS }, 
+        dates: {}, manualKeys: [], use_yp: false, memos: {}, photos: {}, completed: [], autoDates: {},
+        variety: "", fieldSize: "", fieldSizeUnit: "ha", coordinates: "", irrigation: {}
+    };
+    farmers.push(newFarmer); 
+    db.farmers.put(newFarmer); 
+    
+    activeIdx = farmers.length - 1; 
+    activeVillage = villageName || "Unassigned";
+    
+    renderNav(); 
+    loadActiveFarmer();
+}
+
+async function deleteVillage() {
+    if (!activeVillage) return;
+    
+    const targetVillage = activeVillage;
+    const count = farmers.filter(f => (f.village || "Unassigned") === targetVillage).length;
+    
+    if (confirm(`Delete Village "${targetVillage}"?\nThis will permanently delete ALL ${count} farmers in this village.`)) {
+        const targets = farmers.filter(f => (f.village || "Unassigned") === targetVillage);
+        const targetIds = targets.map(f => f.id);
+
+        await db.farmers.bulkDelete(targetIds);
+        farmers = farmers.filter(f => !targetIds.includes(f.id));
+        
+        activeIdx = 0;
+        activeVillage = null; 
+        
+        if (farmers.length === 0) {
+             const newFarmer = {
+                id: Date.now(), name: "Farmer 1", village: "Village 1", 
+                settings: { ...DEFAULT_SETTINGS }, dates: {}, manualKeys: [], use_yp: false, memos: {}, photos: {}, completed: [], autoDates: {}, variety: "", fieldSize: "", fieldSizeUnit: "ha", coordinates: "", irrigation: {}
+            };
+            farmers.push(newFarmer);
+            await db.farmers.put(newFarmer);
+        }
+
+        renderNav();
+        loadActiveFarmer();
+    }
+}
+
+// 3. その他操作
+
+// テスト通知を送信する関数
+async function sendTestNotification() {
+    if (!("Notification" in window)) {
+        alert("This browser does not support notifications. / এই ব্রাউজার নোটিফিকেশন সাপোর্ট করে না।");
+        return;
+    }
+
+    // 許可の確認とリクエスト
+    if (Notification.permission !== "granted") {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+            alert("Please allow notifications in your browser settings. / ব্রাউজার সেটিংসে নোটিফিケーション অনুমতি দিন।");
+            return;
+        }
+    }
+
+    // サービスワーカーを介して通知を表示
+    const registration = await navigator.serviceWorker.ready;
+    
+    // テスト用のサンプルメッセージ
+    const sampleBody = `${t('notif_today')}\n• (Test Village) Sample Farmer: ${t('sowing')}`;
+
+    registration.showNotification(t('notif_title'), {
+        body: sampleBody,
+        icon: 'icon.png',
+        badge: 'icon.png',
+        vibrate: [200, 100, 200],
+        tag: 'test-notif',
+        renotify: true
     });
 }
 
@@ -1401,7 +1608,7 @@ function renameFarmer() {
         farmers[activeIdx].name = n; 
         document.getElementById('prof_name').value = n;
         saveToLocal(); 
-        renderFarmerTabs(); 
+        renderNav(); 
     } 
 }
 
@@ -1411,7 +1618,7 @@ async function deleteFarmer() {
         await db.farmers.delete(farmers[activeIdx].id);
         farmers.splice(activeIdx, 1);
         activeIdx = 0;
-        renderFarmerTabs();
+        renderNav();
         loadActiveFarmer();
     }
 }
@@ -1496,15 +1703,15 @@ function renderIrrigationGraph() {
         data: {
             labels: sortedDates,
             datasets: [
-                { label: 'Daily (min)', data: dailyData, backgroundColor: 'rgba(54, 162, 235, 0.6)', yAxisID: 'y' },
-                { label: 'Cumulative (min)', data: cumulativeData, type: 'line', borderColor: 'rgba(255, 99, 132, 1)', yAxisID: 'y1' }
+                { label: 'Daily (min) দৈনিক (মিনিট)', data: dailyData, backgroundColor: 'rgba(54, 162, 235, 0.6)', yAxisID: 'y' },
+                { label: 'Cumulative (min) মোট পুঞ্জীভূত (মিনিট)', data: cumulativeData, type: 'line', borderColor: 'rgba(255, 99, 132, 1)', yAxisID: 'y1' }
             ]
         },
         options: {
             responsive: true,
             scales: {
-                y: { type: 'linear', display: true, position: 'left', title: {display:true, text:'Daily (min)'} },
-                y1: { type: 'linear', display: true, position: 'right', title: {display:true, text:'Cumulative (min)'}, grid: {drawOnChartArea: false} }
+                y: { type: 'linear', display: true, position: 'left', title: {display:true, text:'Daily (min) দৈনিক (মিনিট)'} },
+                y1: { type: 'linear', display: true, position: 'right', title: {display:true, text:'Cumulative (min) মোট পুঞ্জীভূত (মিনিট)'}, grid: {drawOnChartArea: false} }
             }
         }
     });
@@ -1539,7 +1746,7 @@ function importJSON(input) {
                 } else if (typeof importedData === 'object' && importedData.id) {
                     importedData.id = Date.now(); importedData.name += " (Imp)";
                     await db.farmers.put(importedData); farmers.push(importedData);
-                    activeIdx = farmers.length - 1; renderFarmerTabs(); loadActiveFarmer(); alert("Import Successful!");
+                    activeIdx = farmers.length - 1; renderNav(); loadActiveFarmer(); alert("Import Successful!");
                 } else { alert("Invalid JSON."); }
             } catch (err) { alert("Error parsing JSON."); console.error(err); }
             input.value = "";
@@ -1564,7 +1771,6 @@ function downloadMap() {
     const todayStr = new Date().toISOString().slice(0,10);
     wrapper.style.transform = "scale(1)";
     html2canvas(wrapper).then(canvas => {
-        // PNGからJPEG品質0.6に変更
         canvas.toBlob(blob => { 
             hideLoading();
             shareOrDownload(blob, `Map_${farmers[activeIdx].name}_${todayStr}.jpg`); 
@@ -1623,7 +1829,6 @@ function exportPDF() {
     const wrapper = document.getElementById('slide_wrapper');
     const originalTransform = wrapper.style.transform;
     wrapper.style.transform = "scale(1)";
-    // 解像度をscale:1に下げ、JPEG形式で圧縮
     html2canvas(wrapper, { scale: 1 }).then(canvas => {
         const imgData = canvas.toDataURL('image/jpeg', 0.5);
         const pdfWidth = doc.internal.pageSize.getWidth() - 20;
@@ -1637,7 +1842,6 @@ function exportPDF() {
     }).catch(() => hideLoading());
 }
 
-// --- 修正版：Calendar Export (Mobile Compatibility) ---
 async function exportCalendarPDF() {
     showLoading();
     const { jsPDF } = window.jspdf;
@@ -1665,30 +1869,27 @@ async function exportCalendarPDF() {
     const wasHidden = !calTab.classList.contains('show');
     if(wasHidden) { calTab.classList.add('show', 'active'); calTab.style.display = 'block'; }
     
-    // --- モバイル対応の重要修正箇所 ---
     const calEl = document.getElementById('calendar');
     const originalStyle = calEl.getAttribute('style'); 
 
-    // エクスポート用に表示を一時的に固定 (1200px幅)
     calEl.style.width = '1200px'; 
     calEl.style.maxWidth = 'none';
     calEl.style.height = 'auto';
-    calEl.style.position = 'fixed'; // 画面外に飛ばしてレイアウト崩れを防ぐ
+    calEl.style.position = 'fixed'; 
     calEl.style.left = '-5000px';
     calEl.style.top = '0';
-    // ----------------------------------
 
     for (let i = 0; i < uniqueMonths.length; i++) {
         const monthStr = uniqueMonths[i];
         calendar.gotoDate(monthStr + "-01");
-        calendar.updateSize(); // サイズ変更を適用
-        await new Promise(r => setTimeout(r, 800)); // 描画待ち時間を少し延長
+        calendar.updateSize(); 
+        await new Promise(r => setTimeout(r, 800)); 
 
         await html2canvas(calEl, { 
             scale: 2,
             useCORS: true,
             logging: false,
-            width: 1200 // キャンバスの幅を明示的に指定
+            width: 1200 
         }).then(canvas => {
             if (i > 0) doc.addPage();
             doc.setFontSize(14);
@@ -1707,7 +1908,6 @@ async function exportCalendarPDF() {
         });
     }
 
-    // 元の状態に戻す
     calEl.setAttribute('style', originalStyle || ''); 
     calendar.gotoDate(originalDate);
     calendar.updateSize();
@@ -1746,30 +1946,57 @@ function exportIrrigationPDF() {
     shareOrDownload(blob, `${f.name}_${todayStr}_IrrigationGraph.pdf`);
 }
 
-function checkNotifications() {
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "granted") { Notification.requestPermission(); }
-    else {
-        const f = farmers[activeIdx];
-        if(!f) return;
-        const today = new Date();
-        const todayStr = formatDateISO(today);
-        const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = formatDateISO(tomorrow);
-        dateKeys.forEach(k => {
-            if(f.dates[k.id] === todayStr) {
-                const eventLabel = t(k.id);
-                const msg = currentLang === 'bn' ? `আজ ${eventLabel}` : `Today is ${eventLabel}`;
-                new Notification("3F4D Notification", { body: msg, icon: 'icon.png' }); alert(msg);
+// 通知チェック関数をアップデート
+async function checkNotifications() {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    const todayStr = formatDateISO(new Date());
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = formatDateISO(tomorrow);
+
+    let todaySummary = "";
+    let tomorrowSummary = "";
+
+    // 全農家の予定をスキャン
+    farmers.forEach(f => {
+        const villagePrefix = f.village ? `(${f.village}) ` : "";
+        
+        Object.keys(f.dates).forEach(key => {
+            const eventDate = f.dates[key];
+            const eventLabel = t(key); // 予定名のベンガル語訳を取得
+
+            if (eventDate === todayStr) {
+                todaySummary += `• ${villagePrefix}${f.name}: ${eventLabel}\n`;
+            } else if (eventDate === tomorrowStr) {
+                tomorrowSummary += `• ${villagePrefix}${f.name}: ${eventLabel}\n`;
             }
         });
-        let eventFound = false;
-        dateKeys.forEach(k => { if(f.dates[k.id] === tomorrowStr) eventFound = true; });
-        if(eventFound) new Notification(t('notif_title'), { body: t('notif_msg'), icon: 'icon.png' });
+    });
+
+    // 通知の送信
+    const registration = await navigator.serviceWorker.ready;
+
+    // 今日の通知
+    if (todaySummary) {
+        registration.showNotification(t('notif_title'), {
+            body: `${t('notif_today')}\n${todaySummary}`,
+            icon: 'icon.png',
+            tag: 'today-' + todayStr,
+            renotify: true
+        });
+    }
+
+    // 明日の予習通知（オプション）
+    if (tomorrowSummary) {
+        registration.showNotification(t('notif_title'), {
+            body: `${t('notif_tomorrow')}\n${tomorrowSummary}`,
+            icon: 'icon.png',
+            tag: 'tomorrow-' + todayStr
+        });
     }
 }
 
-// NEW: Function to show all schedules (with Today highlighting)
 function showAllSchedules() {
     if (!allSchedulesModalObj) {
         allSchedulesModalObj = new bootstrap.Modal(document.getElementById('allSchedulesModal'));
@@ -1779,7 +2006,7 @@ function showAllSchedules() {
     let allEvents = [];
     const todayStr = formatDateISO(new Date());
 
-    farmers.forEach((f, idx) => { // farmersのindex(idx)を取得するように変更
+    farmers.forEach((f, idx) => {
         dateKeys.forEach(k => {
             if (f.dates && f.dates[k.id]) {
                 allEvents.push({
@@ -1789,7 +2016,7 @@ function showAllSchedules() {
                     eventKey: k.id,
                     eventName: t(k.id),
                     done: f.completed && f.completed.includes(k.id),
-                    farmerIdx: idx // 農家のindexを保存
+                    farmerIdx: idx 
                 });
             }
         });
@@ -1816,7 +2043,6 @@ function showAllSchedules() {
             : '<span class="badge bg-secondary">Pending</span>';
         const highlightClass = isToday ? 'table-warning border-2 border-primary' : '';
         const rowId = isToday ? 'id="scroll-to-today"' : '';
-        // Farmer名をリンクに変更し、クリックイベントを追加
         const row = `
             <tr ${rowId} class="${highlightClass}">
                 <td style="white-space:nowrap;">
@@ -1845,34 +2071,47 @@ function showAllSchedules() {
     }, { once: true });
 }
 
-// --- 修正版：農家切り替え機能（中央へのスクロール機能付き） ---
 function switchToFarmer(idx) {
     if (farmers[idx]) {
+        // 1. インデックス更新
         activeIdx = idx;
+        
+        // 2. 所属する村をアクティブにする
+        activeVillage = farmers[idx].village || "Unassigned";
+        
+        // 3. データ読み込み
         loadActiveFarmer();
-        renderFarmerTabs(); // タブを再描画して青くハイライトする
+        
+        // 4. ナビゲーション再描画（これで村タブのアクティブ表示が更新される）
+        renderNav(); 
 
-        // ページ上部のナビゲーションバーで選択した農家を中央に移動させる
+        // 5. 村タブを画面中央へスクロール
         setTimeout(() => {
-            const container = document.getElementById('farmerTabs');
-            // activeIdxに対応するタブ要素を取得
-            const activeTab = container.querySelectorAll('.farmer-tab')[idx];
-            
-            if (activeTab) {
-                activeTab.scrollIntoView({
-                    behavior: 'smooth',  // スムーズに動かす
-                    block: 'nearest',    // 上下方向は動かさない
-                    inline: 'center'     // 横方向の中央に配置する
+            const vTabId = `v-tab-${activeVillage.replace(/\s+/g, '_')}`;
+            const vTab = document.getElementById(vTabId);
+            if (vTab) {
+                vTab.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest',
+                    inline: 'center'
                 });
             }
-        }, 100); // 描画の完了を少し待ってから実行
+            
+            // 下段の農家タブもスクロール
+            const farmerTabs = document.querySelectorAll('#farmerTabs .farmer-tab');
+            farmerTabs.forEach(tab => {
+               if(tab.classList.contains('active')){
+                   tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+               } 
+            });
+
+        }, 100);
 
         // モーダルを閉じる
         if (allSchedulesModalObj) {
             allSchedulesModalObj.hide();
         }
         
-        // Table Listタブをアクティブにする
         const tableTabTrigger = document.querySelector('.tab-lbl-table');
         if (tableTabTrigger) {
             const tab = new bootstrap.Tab(tableTabTrigger);
@@ -1880,7 +2119,6 @@ function switchToFarmer(idx) {
         }
     }
 }
-// --- END NEW ---
 
 document.addEventListener('DOMContentLoaded', () => {
     changeLanguage(localStorage.getItem('f3d_lang') || 'en');
