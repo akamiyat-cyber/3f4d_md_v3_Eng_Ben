@@ -153,7 +153,7 @@
         .ben-cal-date { font-size: 0.65rem; color: #d63384; font-weight: normal; margin-top: 1px; display: block; line-height: 1; }
         
         .memo-list-item { border-left: 5px solid #ffc107; background: #fff; padding: 12px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .memo-img-preview { max-width: 100px; max-height: 100px; display: block; margin-top: 5px; border-radius: 4px; border: 1px solid #ddd; cursor: pointer; }
+        .memo-img-preview { max-width: 100px; max-height: 100px; display: inline-block; margin-top: 5px; margin-right: 5px; border-radius: 4px; border: 1px solid #ddd; cursor: pointer; }
 
         .btn-reset-item { padding: 0 5px; font-size: 10px; line-height: 1.5; margin-left: 5px; }
         .duration-bar { display: flex; height: 6px; border-radius: 3px; background: #eee; margin-top: 4px; overflow: hidden; width: 60px; }
@@ -185,6 +185,10 @@
             background-color: #ffffff !important; /* キャプチャ対象のエリアを白に固定 */
             padding: 20px; /* 余白を少し作るとPDFが見やすくなります */
         }
+
+        /* プレビュー画像内の削除ボタン用 */
+        .photo-preview-wrapper { position: relative; display: inline-block; }
+        .btn-remove-photo { position: absolute; top: -5px; right: -5px; background: rgba(220, 53, 69, 0.9); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
 
     </style>
 </head>
@@ -418,7 +422,7 @@
                                     <tr><td>3F4D　4サイクル目</td><td>3F4D_4</td><td>৩এফ৪ডি_৪</td><td>3F4D_3 (Start) + 7</td><td>৩এফ৪ডি_３ +７ দিন</td></tr>
                                     <tr><td>3F4D　5サイクル目</td><td>3F4D_5</td><td>৩এফ৪ডি_৫</td><td>3F4D_4 (Start) + 7</td><td>৩এফ৪ডি_４ + ７ দিন</td></tr>
                                     <tr><td>3F4D　6サイクル目</td><td>3F4D_6</td><td>৩এফ৪ডি_৬</td><td>3F4D_5 (Start) + 7</td><td>৩এফ৪ডি_৫ + ７ দিন</td></tr>
-                                    <tr><td>3F4D　終了</td><td>3F4D End</td><td>৩এফ৪ডি শেষ</td><td>3F4D_6 + 7</td><td>৩এফ৪ডি_৬ + ৭ দিন</td></tr>
+                                    <tr><td>3F4D　終了</td><td>3F4D End</td><td>৩এফ৪ডি শেষ</td><td>3F4D_6 + 7</td><td>৩এফ৪ডি_৬ +７ দিন</td></tr>
                                     <tr><td>最終灌漑</td><td>Last Irrigation</td><td>শেষ সেচ</td><td>3F4D End + 1</td><td>৩এফ৪ডি শেষ + ১ দিন</td></tr>
                                     <tr><td>収穫</td><td>Harvesting</td><td>ফসল কাটা</td><td>Heading + Harvest after heading</td><td>শীষ আসা + শীষ আসার পর ফসল কাটা</td></tr>
                                 </tbody>
@@ -479,7 +483,7 @@
                     </div>
                 </div>
 
-                <<div class="tab-pane fade" id="tab-slide">
+                <div class="tab-pane fade" id="tab-slide">
                     <div class="card p-2 text-center" style="background: #fff; min-height: 400px;" id="tour-step-4">
                         <h6 class="fw-bold text-secondary mb-3">সেচ পরিকল্পনার মানচিত্র (Irrigation Plan Map)</h6>
                         
@@ -539,7 +543,7 @@
         </div>
 
         <div class="mb-3 border-top pt-2">
-            <label class="form-label small fw-bold">Add Photo</label>
+            <label class="form-label small fw-bold">Add Photo (Multiple)</label>
          <div class="d-flex gap-2">
               <label class="btn btn-sm btn-outline-secondary w-50">
                   📂 Album
@@ -552,12 +556,8 @@
                 </label>
          </div>
     
-         <div id="photoPreviewContainer" class="text-center d-none mt-2">
-                <img id="photoPreviewImg" class="img-fluid rounded" style="max-height: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-             <div class="mt-2">
-                 <button class="btn btn-xs btn-outline-danger" onclick="clearPhoto()">Remove Photo</button>
-              </div>
-           </div>
+         <div id="photoPreviewContainer" class="d-flex flex-wrap gap-2 mt-2">
+                </div>
         </div>
         
         </div> 
@@ -920,7 +920,7 @@ let activeIdx = 0;
 let activeVillage = null; // 現在選択中の村
 let calendar;
 let memoModal;
-let tempPhotoData = null;
+let tempPhotoData = []; // Array to store multiple photo data URLs
 let irrigationChart = null;
 let allSchedulesModalObj;
 
@@ -1269,7 +1269,12 @@ function refreshViews() {
             content += `<span class="badge bg-info text-dark">${t('lbl_log_irr')}: ${irr.value} ${unitLabel}</span><br>`;
         }
         if(hasMemo) content += `<span>${f.memos[date]}</span><br>`;
-        if(hasPhoto) content += `<img src="${f.photos[date]}" class="memo-img-preview" onclick="openPhotoModal('${date}')">`;
+        if(hasPhoto) {
+            const photoArray = Array.isArray(f.photos[date]) ? f.photos[date] : [f.photos[date]];
+            photoArray.forEach(pData => {
+                content += `<img src="${pData}" class="memo-img-preview" onclick="openPhotoModal('${date}')">`;
+            });
+        }
         content += `</div>`;
         log.innerHTML += content;
     });
@@ -1337,29 +1342,29 @@ function handleDateClick(info) {
     document.getElementById('memoInput').value = (f.memos && f.memos[date]) ? f.memos[date] : "";
     if (f.irrigation && f.irrigation[date]) { document.getElementById('irr_time').value = f.irrigation[date].value; document.getElementById('irr_unit').value = f.irrigation[date].unit; }
     else { document.getElementById('irr_time').value = ""; document.getElementById('irr_unit').value = "min"; }
-    clearPhotoUI();
+    
+    // Clear and load photos
+    tempPhotoData = [];
+    if(f.photos && f.photos[date]) { 
+        tempPhotoData = Array.isArray(f.photos[date]) ? [...f.photos[date]] : [f.photos[date]];
+    }
+    renderPhotoPreviews();
+
     document.getElementById('photoInput').value = "";
-    // ↓この行を追加してください
     if(document.getElementById('photoInputCamera')) document.getElementById('photoInputCamera').value = "";
-    tempPhotoData = null;
-    if(f.photos && f.photos[date]) { tempPhotoData = f.photos[date]; showPreview(tempPhotoData); } 
+    
     memoModal.show();
 }
 
 function previewPhoto(input) {
-    // ▼▼▼ 追加修正部分：片方が選ばれたら、もう片方の入力をクリアする ▼▼▼
     if (input.id === 'photoInput') {
-        // アルバムが選ばれた場合、カメラの入力をリセット
         const cam = document.getElementById('photoInputCamera');
         if(cam) cam.value = '';
     } else if (input.id === 'photoInputCamera') {
-        // カメラが選ばれた場合、アルバムの入力をリセット
         const album = document.getElementById('photoInput');
         if(album) album.value = '';
     }
-    // ▲▲▲ 追加修正部分ここまで ▲▲▲
 
-    // ファイルが選択されているか確認
     if (input.files && input.files[0]) {
         const file = input.files[0];
         const reader = new FileReader();
@@ -1367,11 +1372,9 @@ function previewPhoto(input) {
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                // 画像のリサイズ処理（LocalStorage容量オーバー防止のため重要）
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // 最大サイズ設定 (例: 800px)
                 const MAX_WIDTH = 800;
                 const MAX_HEIGHT = 800;
                 let width = img.width;
@@ -1393,12 +1396,9 @@ function previewPhoto(input) {
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // グローバル変数 tempPhotoData にデータを格納
-                // (saveMemo関数でこれが保存されます)
-                tempPhotoData = canvas.toDataURL('image/jpeg', 0.7);
-                
-                // プレビュー表示
-                showPreview(tempPhotoData);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                tempPhotoData.push(dataUrl);
+                renderPhotoPreviews();
             }
             img.src = e.target.result;
         }
@@ -1406,28 +1406,40 @@ function previewPhoto(input) {
     }
 }
 
-function showPreview(dataUrl) {
+function renderPhotoPreviews() {
     const container = document.getElementById('photoPreviewContainer');
-    const img = document.getElementById('photoPreviewImg');
+    container.innerHTML = "";
     
-    if (dataUrl) {
+    tempPhotoData.forEach((dataUrl, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'photo-preview-wrapper';
+        
+        const img = document.createElement('img');
         img.src = dataUrl;
-        container.classList.remove('d-none'); // 表示
-    } else {
-        img.src = '';
-        container.classList.add('d-none'); // 非表示
-    }
+        img.className = 'memo-img-preview';
+        img.style.margin = "0";
+        
+        const btn = document.createElement('button');
+        btn.className = 'btn-remove-photo';
+        btn.innerHTML = '×';
+        btn.onclick = () => removePhoto(index);
+        
+        wrapper.appendChild(img);
+        wrapper.appendChild(btn);
+        container.appendChild(wrapper);
+    });
+}
+
+function removePhoto(index) {
+    tempPhotoData.splice(index, 1);
+    renderPhotoPreviews();
 }
 
 function clearPhoto() {
-    tempPhotoData = null;
+    tempPhotoData = [];
     document.getElementById('photoInput').value = "";
-    clearPhotoUI();
-}
-
-function clearPhotoUI() {
-    document.getElementById('photoPreviewImg').src = "";
-    document.getElementById('photoPreviewContainer').classList.add('d-none');
+    if(document.getElementById('photoInputCamera')) document.getElementById('photoInputCamera').value = "";
+    renderPhotoPreviews();
 }
 
 function saveMemo() {
@@ -1440,7 +1452,10 @@ function saveMemo() {
     if(!f.photos) f.photos = {};
     if(!f.irrigation) f.irrigation = {};
     if (text === "") delete f.memos[date]; else f.memos[date] = text;
-    if (tempPhotoData) f.photos[date] = tempPhotoData; else delete f.photos[date];
+    
+    if (tempPhotoData && tempPhotoData.length > 0) f.photos[date] = tempPhotoData; 
+    else delete f.photos[date];
+    
     if (irrVal && irrVal > 0) { f.irrigation[date] = { value: parseFloat(irrVal), unit: irrUnit }; } else { delete f.irrigation[date]; }
     saveToLocal();
     refreshViews();
@@ -1463,30 +1478,22 @@ function updateFromManual(id) {
 // ★ New Navigation & Structure Logic
 // ==========================================
 
-// 1. ナビゲーション描画 (renderFarmerTabsの置換)
 function renderNav() {
     const vContainer = document.getElementById('villageTabs');
     const fContainer = document.getElementById('farmerTabs');
     vContainer.innerHTML = "";
     fContainer.innerHTML = "";
 
-    // 1. ユニークな村リストを取得
     const villages = [...new Set(farmers.map(f => f.village || "Unassigned"))].sort();
 
-    // 2. アクティブな村の整合性チェック
     if (farmers[activeIdx]) {
         activeVillage = farmers[activeIdx].village || "Unassigned";
     } else if (!activeVillage || !villages.includes(activeVillage)) {
         activeVillage = villages.length > 0 ? villages[0] : null;
     }
 
-    // --------------------------------------
-    // 3. 上段：村ナビゲーション
-    // --------------------------------------
-    
-    // ★【修正】「+ Village」ボタンを一番最初に追加
     const addVBtn = document.createElement('button');
-    addVBtn.className = "btn btn-outline-secondary btn-add-item me-2"; // me-2に変更して右に余白
+    addVBtn.className = "btn btn-outline-secondary btn-add-item me-2";
     addVBtn.innerText = "+";
     addVBtn.title = "Add New Village";
     addVBtn.onclick = addNewVillage;
@@ -1511,13 +1518,9 @@ function renderNav() {
         });
     }
 
-    // --------------------------------------
-    // 4. 下段：農家ナビゲーション
-    // --------------------------------------
     if (activeVillage) {
-        // ★【修正】「+ Farmer」ボタンを一番最初に追加
         const addFBtn = document.createElement('button');
-        addFBtn.className = "btn btn-outline-primary btn-add-item me-2"; // me-2に変更して右に余白
+        addFBtn.className = "btn btn-outline-primary btn-add-item me-2";
         addFBtn.innerText = "+";
         addFBtn.title = "Add Farmer to this Village";
         addFBtn.onclick = addNewFarmer;
@@ -1541,18 +1544,13 @@ function renderNav() {
     }
 }
 
-// 既存の関数名互換用
 function renderFarmerTabs() {
     renderNav();
 }
 
-// 2. 追加・削除機能
-
 function addNewVillage() {
     const vName = prompt("Enter New Village Name:");
     if (!vName) return;
-
-    // 既存チェック
     const exists = farmers.some(f => f.village === vName);
     if (exists) {
         alert("Village already exists!");
@@ -1570,7 +1568,6 @@ function addNewFarmer() {
     }
     const count = farmers.filter(f => (f.village || "Unassigned") === activeVillage).length;
     const defaultName = `Farmer ${count + 1}`;
-    
     const fName = prompt(`Enter Farmer Name for "${activeVillage}":`, defaultName);
     if (fName) {
         const villageToSave = activeVillage === "Unassigned" ? "" : activeVillage;
@@ -1589,30 +1586,23 @@ function createFarmerInVillage(villageName, farmerName) {
     };
     farmers.push(newFarmer); 
     db.farmers.put(newFarmer); 
-    
     activeIdx = farmers.length - 1; 
     activeVillage = villageName || "Unassigned";
-    
     renderNav(); 
     loadActiveFarmer();
 }
 
 async function deleteVillage() {
     if (!activeVillage) return;
-    
     const targetVillage = activeVillage;
     const count = farmers.filter(f => (f.village || "Unassigned") === targetVillage).length;
-    
     if (confirm(`Delete Village "${targetVillage}"?\nThis will permanently delete ALL ${count} farmers in this village.`)) {
         const targets = farmers.filter(f => (f.village || "Unassigned") === targetVillage);
         const targetIds = targets.map(f => f.id);
-
         await db.farmers.bulkDelete(targetIds);
         farmers = farmers.filter(f => !targetIds.includes(f.id));
-        
         activeIdx = 0;
         activeVillage = null; 
-        
         if (farmers.length === 0) {
              const newFarmer = {
                 id: Date.now(), name: "Farmer 1", village: "Village 1", 
@@ -1621,36 +1611,25 @@ async function deleteVillage() {
             farmers.push(newFarmer);
             await db.farmers.put(newFarmer);
         }
-
         renderNav();
         loadActiveFarmer();
     }
 }
 
-// 3. その他操作
-
-// テスト通知を送信する関数
 async function sendTestNotification() {
     if (!("Notification" in window)) {
-        alert("This browser does not support notifications. / এই ব্রাউজার নোটিফিকেশন সাপোর্ট করে না।");
+        alert("This browser does not support notifications.");
         return;
     }
-
-    // 許可の確認とリクエスト
     if (Notification.permission !== "granted") {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
-            alert("Please allow notifications in your browser settings. / ব্রাউজার সেটিংসে নোটিফিケーション অনুমতি দিন।");
+            alert("Please allow notifications in your browser settings.");
             return;
         }
     }
-
-    // サービスワーカーを介して通知を表示
     const registration = await navigator.serviceWorker.ready;
-    
-    // テスト用のサンプルメッセージ
     const sampleBody = `${t('notif_today')}\n• (Test Village) Sample Farmer: ${t('sowing')}`;
-
     registration.showNotification(t('notif_title'), {
         body: sampleBody,
         icon: 'icon.png',
@@ -1954,7 +1933,7 @@ async function exportCalendarPDF() {
         await html2canvas(calEl, { 
             scale: 2,
             useCORS: true,
-            backgroundColor: '#ffffff', // これが重要です
+            backgroundColor: '#ffffff',
             logging: false,
             width: 1200 
         }).then(canvas => {
@@ -2001,71 +1980,44 @@ function exportIrrigationCSV() {
 function exportIrrigationPDF() {
     if(!irrigationChart) return alert("No chart available.");
     showLoading();
-    
     const { jsPDF } = window.jspdf;
-    // A4横サイズ（297mm x 210mm）を指定
     const doc = new jsPDF('landscape', 'mm', 'a4'); 
     const f = farmers[activeIdx];
     const todayStr = new Date().toISOString().slice(0,10);
-
     const originalCanvas = irrigationChart.canvas;
-    
-    // --- 1. 解像度の設定 (オリジナルの1.7倍) ---
     const scale = 1.7; 
     const tmpCanvas = document.createElement('canvas');
     tmpCanvas.width = originalCanvas.width * scale;
     tmpCanvas.height = originalCanvas.height * scale;
     const ctx = tmpCanvas.getContext('2d');
-    
-    // 背景を白く塗りつぶす（真っ黒になる問題を解決）
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-    
-    // 高解像度でグラフを描画
     ctx.drawImage(originalCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
-    
-    // 画像データを取得（PNG形式の方が文字がクッキリします）
     const imgData = tmpCanvas.toDataURL('image/png');
-
-    // --- 2. 歪み防止の計算 (アスペクト比の維持) ---
-    const pdfWidth = 260; // PDF内での横幅(mm)
-    // 元のグラフの「縦横比」を正確に計算
+    const pdfWidth = 260; 
     const ratio = originalCanvas.height / originalCanvas.width;
-    // 横幅に合わせて、比率を保ったままの高さを算出
     const imgHeight = pdfWidth * ratio;
-
-    // PDFへの書き出し
     doc.setFontSize(16);
     doc.text(`Irrigation Graph: ${f.name}`, 15, 15);
-    
-    // 計算した imgHeight を使うことで、伸び縮み（歪み）がなくなります
     doc.addImage(imgData, 'PNG', 15, 25, pdfWidth, imgHeight);
-
     const blob = doc.output('blob');
     hideLoading();
     shareOrDownload(blob, `${f.name}_${todayStr}_IrrigationGraph.pdf`);
 }
 
-// 通知チェック関数をアップデート
 async function checkNotifications() {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
-
     const todayStr = formatDateISO(new Date());
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const tomorrowStr = formatDateISO(tomorrow);
-
     let todaySummary = "";
     let tomorrowSummary = "";
-
-    // 全農家の予定をスキャン
     farmers.forEach(f => {
         const villagePrefix = f.village ? `(${f.village}) ` : "";
-        
         Object.keys(f.dates).forEach(key => {
             const eventDate = f.dates[key];
-            const eventLabel = t(key); // 予定名のベンガル語訳を取得
-
+            const eventLabel = t(key);
             if (eventDate === todayStr) {
                 todaySummary += `• ${villagePrefix}${f.name}: ${eventLabel}\n`;
             } else if (eventDate === tomorrowStr) {
@@ -2073,11 +2025,7 @@ async function checkNotifications() {
             }
         });
     });
-
-    // 通知の送信
     const registration = await navigator.serviceWorker.ready;
-
-    // 今日の通知
     if (todaySummary) {
         registration.showNotification(t('notif_title'), {
             body: `${t('notif_today')}\n${todaySummary}`,
@@ -2086,8 +2034,6 @@ async function checkNotifications() {
             renotify: true
         });
     }
-
-    // 明日の予習通知（オプション）
     if (tomorrowSummary) {
         registration.showNotification(t('notif_title'), {
             body: `${t('notif_tomorrow')}\n${tomorrowSummary}`,
@@ -2105,7 +2051,6 @@ function showAllSchedules() {
     tbody.innerHTML = "";
     let allEvents = [];
     const todayStr = formatDateISO(new Date());
-
     farmers.forEach((f, idx) => {
         dateKeys.forEach(k => {
             if (f.dates && f.dates[k.id]) {
@@ -2132,9 +2077,7 @@ function showAllSchedules() {
             });
         }
     });
-
     allEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
-
     allEvents.forEach(e => {
         const benDate = getBengaliDate(e.date);
         const isToday = e.date === todayStr;
@@ -2161,7 +2104,6 @@ function showAllSchedules() {
         `;
         tbody.innerHTML += row;
     });
-
     allSchedulesModalObj.show();
     document.getElementById('allSchedulesModal').addEventListener('shown.bs.modal', function () {
         const todayRow = document.getElementById('scroll-to-today');
@@ -2173,19 +2115,10 @@ function showAllSchedules() {
 
 function switchToFarmer(idx) {
     if (farmers[idx]) {
-        // 1. インデックス更新
         activeIdx = idx;
-        
-        // 2. 所属する村をアクティブにする
         activeVillage = farmers[idx].village || "Unassigned";
-        
-        // 3. データ読み込み
         loadActiveFarmer();
-        
-        // 4. ナビゲーション再描画（これで村タブのアクティブ表示が更新される）
         renderNav(); 
-
-        // 5. 村タブを画面中央へスクロール
         setTimeout(() => {
             const vTabId = `v-tab-${activeVillage.replace(/\s+/g, '_')}`;
             const vTab = document.getElementById(vTabId);
@@ -2196,22 +2129,16 @@ function switchToFarmer(idx) {
                     inline: 'center'
                 });
             }
-            
-            // 下段の農家タブもスクロール
             const farmerTabs = document.querySelectorAll('#farmerTabs .farmer-tab');
             farmerTabs.forEach(tab => {
                if(tab.classList.contains('active')){
                    tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
                } 
             });
-
         }, 100);
-
-        // モーダルを閉じる
         if (allSchedulesModalObj) {
             allSchedulesModalObj.hide();
         }
-        
         const tableTabTrigger = document.querySelector('.tab-lbl-table');
         if (tableTabTrigger) {
             const tab = new bootstrap.Tab(tableTabTrigger);
@@ -2245,7 +2172,6 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="mb-3">
         <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fhits.dwyl.com%2Fakamiyat-cyber%2F3f4d_md_v3_Eng_Ben.json%3Fcolor%3Dpink" alt="Users"/>
     </div>
-    
     <p class="mb-1">This app was developed by Takehiro Kamiya (Univ. Tokyo).</p>
     <p class="mb-0">Use this application at your own risk.</p>
 </footer>
