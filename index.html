@@ -75,13 +75,14 @@
             font-size: 0.9rem;
         }
         
+        /* 修正後：赤色背景に白い文字 */
         .village-tab.active {
-            background: #fff;
-            color: var(--ios-accent);
-            border-color: #dee2e6;
-            border-bottom: 2px solid #fff;
-            margin-bottom: -1px;
-            z-index: 10;
+        background: #dc3545; /* 赤色 (Bootstrapのdanger色相当) */
+        color: #ffffff;      /* 白色 */
+        border-color: #dc3545;
+        border-bottom: 2px solid #dc3545;
+        margin-bottom: -1px;
+        z-index: 10;
         }
 
         /* Farmer Nav (Bottom Tier) */
@@ -229,7 +230,7 @@
                 <ul class="dropdown-menu dropdown-menu-end shadow">
                     <li><h6 class="dropdown-header">Backup & Export　バックアップおよびエクスポート</h6></li>
                     <li><button class="dropdown-item" onclick="exportJSON('all')">📥 Backup All (JSON) সব ব্যাকআপ</button></li>
-                    <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Backup Current (JSON) বর্তমান ব্যাকআপ</button></li>
+                    <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Backup Current (JSON) বর্তমানバックアップ</button></li>
                     <li><button class="dropdown-item" onclick="document.getElementById('importFile').click()">📤 Import JSON ইমপোর্ট করুন </button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><button class="dropdown-item fw-bold text-danger" onclick="exportPDF()">📄 Export PDF Report PDF রিপোর্ট এক্সপোর্ট করুন</button></li>
@@ -408,21 +409,21 @@
                                 <tbody>
                                     <tr><td>播種日</td><td>Sowing</td><td>বপন</td><td>Setting date</td><td>তারিখ নির্ধারণ (日付設定)</td></tr>
                                     <tr><td>移植日</td><td>Transplanting</td><td>চারা রোপণ</td><td>Sowing + 40 days</td><td>বপন + ৪০ দিন</td></tr>
-                                    <tr><td>ピタン開始</td><td>Pitan Start</td><td>পিতান শুরু</td><td>Transplanting + Pitan start after transplanting</td><td>চারা রোপণ + চারা রোপণের পর পিতান শুরু</td></tr>
-                                    <tr><td>ピタン終了</td><td>Pitan End</td><td>পিতান শেষ</td><td>Pitan Start + Pitan Duration</td><td>পিতান শুরু + পিতানের সময়কাল</td></tr>
+                                    <tr><td>ピタン開始</td><td>Pitan Start</td><td>পিতান शुरू</td><td>Transplanting + Pitan start after transplanting</td><td>চারা রোপণ + চারা রোপণের পর পিতান শুরু</td></tr>
+                                    <tr><td>ピタン終了</td><td>Pitan End</td><td>পিতান শেষ</td><td>Pitan Start + Pitan Duration</td><td>পিতান शुरू + পিতানের সময়কাল</td></tr>
                                     <tr><td>中干し開始</td><td>MD Start</td><td>エムডি শুরু</td><td>Sowing + MD End</td><td>বপন + বীজ বপনের পর এমডি শুরু</td></tr>
-                                    <tr><td>幼穂形成確認開始</td><td>Panicle Initiation Check start</td><td>শীষ আসার পরীক্ষা শুরু</td><td>MD start + Panicle Initiation check (day after MD Start)</td><td>エムডি শুরু + শীষ আসার পরীক্ষা (エムডি শুরুর পরের দিন)</td></tr>
-                                    <tr><td>中干し終了</td><td>MD End</td><td>エムডি শেষ</td><td>MD Start + MD Duration</td><td>エムডি শুরু + এমডি সময়কাল</td></tr>
+                                    <tr><td>幼穂形成確認開始</td><td>Panicle Initiation Check start</td><td>শীষ আসার পরীক্ষা শুরু</td><td>MD start + Panicle Initiation check (day after MD Start)</td><td>エムডি शुरू + শীষ আসার পরীক্ষা (エムডি শুরুর পরের দিন)</td></tr>
+                                    <tr><td>中干し終了</td><td>MD End</td><td>エムডি শেষ</td><td>MD Start + MD Duration</td><td>エムডি शुरू + এমডি সময়কাল</td></tr>
                                     <tr><td>中干し後灌漑開始</td><td>Flooding start (Panicle initiation)</td><td>প্লাবন শুরু (শীষ আসার সময়)</td><td>Heading - Flooding during panicle initiation before heading. ただし、Manual Young Panicle (1-2mm)に入力があればその値を用いてる。</td><td>শীষ আসা - (শীষ আসার সময় প্লাবন সময়কাল) তবে, ম্যানুয়াল কচি শীষ (১-২ মিমি) 에 ইনপুট থাকলে সেই মান ব্যবহার করা হবে।</td></tr>
                                     <tr><td>中干し最後の灌漑</td><td>Flooding end</td><td>প্লাবন শেষ</td><td>Flooding Start (Panicle initiation) - (Flooding during panicle initiation before heading  - 3F4D start before heading)</td><td>প্লাবন শুরু - (শীষ আসার সময় প্লাবন - ৩এফ৪ডি শুরু)</td></tr>
                                     <tr><td>3F4D　1サイクル目</td><td>3F4D_1 (Start)</td><td>৩এফ৪ডি_১ (শুরু)</td><td>Flooding end</td><td>প্লাবন শেষ</td></tr>
                                     <tr><td>3F4D　2サイクル目</td><td>3F4D_2</td><td>৩এফ৪ডি_২</td><td>3F4D_1 (Start) + 7</td><td>৩এফ৪ডি_১ + ৭ দিন</td></tr>
                                     <tr><td>3F4D　3サイクル目</td><td>3F4D_3</td><td>৩এফ৪ডি_৩</td><td>3F4D_2 (Start) + 7</td><td>৩এফ৪ডি_２ + ৭ দিন</td></tr>
                                     <tr><td>出穂日</td><td>Heading</td><td>শীষ আসা</td><td>Heading + Heading day after sowing</td><td>শীষ আসা + বীজ বপনের পর শীষ আসার দিন</td></tr>
-                                    <tr><td>3F4D　4サイクル目</td><td>3F4D_4</td><td>৩এফ৪ডি_৪</td><td>3F4D_3 (Start) + 7</td><td>৩এফ৪ডি_３ +７ দিন</td></tr>
-                                    <tr><td>3F4D　5サイクル目</td><td>3F4D_5</td><td>৩এফ৪ডি_৫</td><td>3F4D_4 (Start) + 7</td><td>৩এফ৪ডি_４ + ７ দিন</td></tr>
-                                    <tr><td>3F4D　6サイクル目</td><td>3F4D_6</td><td>৩এফ৪ডি_৬</td><td>3F4D_5 (Start) + 7</td><td>৩এফ৪ডি_৫ + ７ দিন</td></tr>
-                                    <tr><td>3F4D　終了</td><td>3F4D End</td><td>৩এফ৪ডি শেষ</td><td>3F4D_6 + 7</td><td>৩এফ৪ডি_৬ +７ দিন</td></tr>
+                                    <tr><td>3F4D　4サイクル目</td><td>3F4D_4</td><td>৩এফ৪ডি_৪</td><td>3F4D_3 (Start) + 7</td><td>৩এফ৪ডি_３ +৭ দিন</td></tr>
+                                    <tr><td>3F4D　5サイクル目</td><td>3F4D_5</td><td>৩এফ৪ডি_৫</td><td>3F4D_4 (Start) + 7</td><td>৩এফ৪ডি_৪ + ৭ দিন</td></tr>
+                                    <tr><td>3F4D　6サイクル目</td><td>3F4D_6</td><td>৩এফ৪ডি_৬</td><td>3F4D_5 (Start) + 7</td><td>৩এফ৪ডি_৫ + ৭ দিন</td></tr>
+                                    <tr><td>3F4D　終了</td><td>3F4D End</td><td>৩এফ৪ডি শেষ</td><td>3F4D_6 + 7</td><td>৩এফ৪ডি_৬ +৭ দিন</td></tr>
                                     <tr><td>最終灌漑</td><td>Last Irrigation</td><td>শেষ সেচ</td><td>3F4D End + 1</td><td>৩এফ৪ডি শেষ + ১ দিন</td></tr>
                                     <tr><td>収穫</td><td>Harvesting</td><td>ফসল কাটা</td><td>Heading + Harvest after heading</td><td>শীষ আসা + শীষ আসার পর ফসল কাটা</td></tr>
                                 </tbody>
@@ -737,7 +738,7 @@ const TRANSLATIONS = {
         tp: "চারা রোপণ *",
         p_start: "পিতান শুরু",
         p_end: "পিতান শেষ",
-        md_start: "এমডি শুরু",
+        md_start: "エムডি শুরু",
         pi_check_start: "শীষ আসার পরীক্ষা শুরু",
         md_end: "এমডি শেষ",
         pi_flood_start: "প্লাবন শুরু (শীষ আসার সময়)",
@@ -757,8 +758,8 @@ const TRANSLATIONS = {
         lbl_p_start_off: "চারা রোপণের পর পিতান শুরু",
         lbl_p_dur: "পিতানের সময়কাল",
         lbl_md_start_off: "বীজ বপনের পর এমডি শুরু",
-        lbl_md_dur: "এমডি সময়কাল",
-        lbl_pi_check_off: "শীষ আসার পরীক্ষা (এমডি শুরুর পরের দিন)",
+        lbl_md_dur: "エムডি সময়কাল",
+        lbl_pi_check_off: "শীষ আসার পরীক্ষা (エムডি শুরুর পরের দিন)",
         lbl_hd_das: "বীজ বপনের পর শীষ আসার দিন",
         lbl_pi_off: "শীষ আসার সময় প্লাবন সময়কাল",
         lbl_f3d_off: "শীষ আসার আগে ৩এফ৪ডি শুরু",
@@ -1122,7 +1123,7 @@ function getBengaliDate(gregorianDateStr, forceBengali = false) {
 
     if (currentLang === 'bn' || forceBengali) {
         const benMonth = bengaliMonthsBn[currentMonth];
-        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬７৮৯"[d]);
+        const benDayStr = benDay.toString().replace(/\d/g, d => "০১২৩৪৫৬７８৯"[d]);
         return `${benDayStr} ${benMonth}`;
     } else {
         const benMonth = bengaliMonthsEn[currentMonth];
@@ -1469,7 +1470,7 @@ function renderNav() {
     vContainer.innerHTML = "";
     fContainer.innerHTML = "";
 
-    const villages = [...new Set(farmers.map(f => f.village || "Unassigned"))].sort();
+    const villages = [...new Set(farmers.map(f => f.village || "Unassigned"))];
 
     if (farmers[activeIdx]) {
         activeVillage = farmers[activeIdx].village || "Unassigned";
@@ -1543,6 +1544,7 @@ function addNewVillage() {
         renderNav();
         return;
     }
+    // 新しいVillageをfarmersの先頭（に属するFarmer）として追加することで、一番左に表示させる
     createFarmerInVillage(vName, "Farmer 1");
 }
 
@@ -1569,9 +1571,9 @@ function createFarmerInVillage(villageName, farmerName) {
         dates: {}, manualKeys: [], use_yp: false, memos: {}, photos: {}, completed: [], autoDates: {},
         variety: "", fieldSize: "", fieldSizeUnit: "ha", coordinates: "", irrigation: {}
     };
-    farmers.push(newFarmer); 
+    farmers.unshift(newFarmer); 
     db.farmers.put(newFarmer); 
-    activeIdx = farmers.length - 1; 
+    activeIdx = 0; 
     activeVillage = villageName || "Unassigned";
     renderNav(); 
     loadActiveFarmer();
