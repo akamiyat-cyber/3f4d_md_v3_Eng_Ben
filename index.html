@@ -180,6 +180,11 @@
             text-decoration: none !important;
             color: inherit; /* 文字色を親要素に合わせる場合 */
         }
+        
+        #result-area {
+            background-color: #ffffff !important; /* キャプチャ対象のエリアを白に固定 */
+            padding: 20px; /* 余白を少し作るとPDFが見やすくなります */
+        }
 
     </style>
 </head>
@@ -535,7 +540,7 @@
 
         <div class="mb-3 border-top pt-2">
             <label class="form-label small fw-bold">Add Photo</label>
-            <input type="file" id="photoInput" accept="image/*" capture="environment" class="form-control form-control-sm" onchange="previewPhoto(this)">
+            <input type="file" id="photoInput" accept="image/*" class="form-control form-control-sm" onchange="previewPhoto(this)">
         </div>
         
         <div id="photoPreviewContainer" class="text-center d-none">
@@ -1888,6 +1893,7 @@ async function exportCalendarPDF() {
         await html2canvas(calEl, { 
             scale: 2,
             useCORS: true,
+            backgroundColor: '#ffffff', // これが重要です
             logging: false,
             width: 1200 
         }).then(canvas => {
@@ -1934,13 +1940,46 @@ function exportIrrigationCSV() {
 function exportIrrigationPDF() {
     if(!irrigationChart) return alert("No chart available.");
     showLoading();
+    
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('landscape');
+    // A4横サイズ（297mm x 210mm）を指定
+    const doc = new jsPDF('landscape', 'mm', 'a4'); 
     const f = farmers[activeIdx];
     const todayStr = new Date().toISOString().slice(0,10);
-    doc.setFontSize(16); doc.text(`Irrigation Graph: ${f.name}`, 10, 10);
-    const imgData = irrigationChart.toBase64Image('image/jpeg', 0.6); 
-    doc.addImage(imgData, 'JPEG', 10, 20, 280, 150);
+
+    const originalCanvas = irrigationChart.canvas;
+    
+    // --- 1. 解像度の設定 (オリジナルの1.7倍) ---
+    const scale = 1.7; 
+    const tmpCanvas = document.createElement('canvas');
+    tmpCanvas.width = originalCanvas.width * scale;
+    tmpCanvas.height = originalCanvas.height * scale;
+    const ctx = tmpCanvas.getContext('2d');
+    
+    // 背景を白く塗りつぶす（真っ黒になる問題を解決）
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+    
+    // 高解像度でグラフを描画
+    ctx.drawImage(originalCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
+    
+    // 画像データを取得（PNG形式の方が文字がクッキリします）
+    const imgData = tmpCanvas.toDataURL('image/png');
+
+    // --- 2. 歪み防止の計算 (アスペクト比の維持) ---
+    const pdfWidth = 260; // PDF内での横幅(mm)
+    // 元のグラフの「縦横比」を正確に計算
+    const ratio = originalCanvas.height / originalCanvas.width;
+    // 横幅に合わせて、比率を保ったままの高さを算出
+    const imgHeight = pdfWidth * ratio;
+
+    // PDFへの書き出し
+    doc.setFontSize(16);
+    doc.text(`Irrigation Graph: ${f.name}`, 15, 15);
+    
+    // 計算した imgHeight を使うことで、伸び縮み（歪み）がなくなります
+    doc.addImage(imgData, 'PNG', 15, 25, pdfWidth, imgHeight);
+
     const blob = doc.output('blob');
     hideLoading();
     shareOrDownload(blob, `${f.name}_${todayStr}_IrrigationGraph.pdf`);
