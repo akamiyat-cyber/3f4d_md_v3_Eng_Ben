@@ -18,6 +18,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://unpkg.com/dexie@3.2.4/dist/dexie.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <style>
         :root {
@@ -73,16 +74,16 @@
             flex-shrink: 0;
             transition: 0.2s;
             font-size: 0.9rem;
+            position: relative; /* バッジ表示用 */
         }
         
-        /* 修正後：赤色背景に白い文字 */
         .village-tab.active {
-        background: #dc3545; /* 赤色 (Bootstrapのdanger色相当) */
-        color: #ffffff;      /* 白色 */
-        border-color: #dc3545;
-        border-bottom: 2px solid #dc3545;
-        margin-bottom: -1px;
-        z-index: 10;
+            background: #dc3545; /* 赤色 */
+            color: #ffffff;      /* 白色 */
+            border-color: #dc3545;
+            border-bottom: 2px solid #dc3545;
+            margin-bottom: -1px;
+            z-index: 10;
         }
 
         /* Farmer Nav (Bottom Tier) */
@@ -130,7 +131,6 @@
         .card { margin-bottom: 10px; border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; }
         .card-header { font-weight: bold; background-color: #f8f9fa; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; }
         
-        /* Updated Manual Highlight Style: Red Border */
         .manual-highlight { border: 2px solid red !important; outline: none !important; }
         
         .row-pitan, .input-pitan { background-color: var(--color-pitan) !important; border-left: 8px solid var(--border-pitan) !important; }
@@ -176,20 +176,16 @@
         .spinner { width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid var(--ios-accent); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* 曜日のヘッダー部分のアンダーラインを消す */
-        .fc-col-header-cell-cushion {
-            text-decoration: none !important;
-            color: inherit; /* 文字色を親要素に合わせる場合 */
-        }
-        
-        #result-area {
-            background-color: #ffffff !important; /* キャプチャ対象のエリアを白に固定 */
-            padding: 20px; /* 余白を少し作るとPDFが見やすくなります */
-        }
-
-        /* プレビュー画像内の削除ボタン用 */
+        .fc-col-header-cell-cushion { text-decoration: none !important; color: inherit; }
+        #result-area { background-color: #ffffff !important; padding: 20px; }
         .photo-preview-wrapper { position: relative; display: inline-block; }
         .btn-remove-photo { position: absolute; top: -5px; right: -5px; background: rgba(220, 53, 69, 0.9); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+
+        /* Gallery Grid */
+        .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        .gallery-item { border: 1px solid #ddd; padding: 5px; border-radius: 5px; text-align: center; background: #fff; }
+        .gallery-item img { width: 100%; height: 80px; object-fit: cover; border-radius: 3px; }
+        .gallery-info { font-size: 0.7rem; color: #555; margin-top: 3px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
     </style>
 </head>
@@ -212,11 +208,8 @@
         </h5>
         
         <div class="d-flex gap-2 flex-wrap justify-content-end">
-            <button class="btn btn-sm btn-outline-primary" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules সকল সময়সূচী</button>
-
-            <a href="https://www.accuweather.com/en/bd/bangladesh-weather" target="_blank" class="btn btn-sm btn-outline-info text-decoration-none" title="Weather Forecast">
-                ⛅ Weather আবহাওয়া
-            </a>
+            <button class="btn btn-sm btn-outline-info btn-label-gallery" onclick="openGallery()" title="Village Gallery">📷 Gallery</button>
+            <button class="btn btn-sm btn-outline-primary btn-label-all-schedules" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules</button>
             
             <select id="lang-selector" class="form-select form-select-sm" style="width: auto;" onchange="changeLanguage(this.value)">
                 <option value="en">English</option>
@@ -228,26 +221,27 @@
                     ⚙️
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
-                    <li><h6 class="dropdown-header">Backup & Export　バックアップおよびエクスポート</h6></li>
+                    <li><h6 class="dropdown-header">Backup & Export　ব্যাকআপ এবং এক্সপোর্ট</h6></li>
                     <li><button class="dropdown-item" onclick="exportJSON('all')">📥 Backup All (JSON) সব ব্যাকআপ</button></li>
-                    <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Backup Current (JSON) বর্তমানバックアップ</button></li>
+                    <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Backup Current (JSON) বর্তমান ব্যাকআপ</button></li>
                     <li><button class="dropdown-item" onclick="document.getElementById('importFile').click()">📤 Import JSON ইমপোর্ট করুন </button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><button class="dropdown-item fw-bold text-danger" onclick="exportPDF()">📄 Export PDF Report PDF রিপোর্ট এক্সপোর্ট করুন</button></li>
                     <li><button class="dropdown-item fw-bold text-primary" onclick="exportCalendarPDF()">📅 Export Calendar PDF ক্যালেন্ডার PDF এক্সপোর্ট করুন</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header text-danger">Manage Structure</h6></li>
-                    <li><button class="dropdown-item text-danger" onclick="deleteVillage()">🗑️ Delete Village (গ্রাম সহ মুছে ফেলুন)</button></li>
+                    <li><button class="dropdown-item text-danger" onclick="deleteVillage()">🗑️ Delete Village গ্রাম মুছে ফেলুন</button></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header text-danger">Advanced</h6></li>
-                    <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All) হার্ড रिसেট (সব মুছে ফেলুন)</button></li>
+                    <li><button class="dropdown-item text-danger" onclick="confirmResetAll()">⚠️ Hard Reset (Clear All) হার্ড রিসেট (সব মুছে ফেলুন)</button></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><h6 class="dropdown-header">Notification Test</h6></li>
+                    <li><h6 class="dropdown-header">Other</h6></li>
                     <li>
                         <button class="dropdown-item btn-label-test-notif" onclick="sendTestNotification()">
                             🔔 Send Test Notification
                         </button>
                     </li>
+                    <li><button class="dropdown-item btn-label-logic-config" onclick="openLogicModal()">📐 Logic Configuration (Formulas)</button></li>
                 </ul>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importJSON(this)">
             </div>
@@ -256,10 +250,14 @@
     
     <div id="nav-container-wrapper" class="d-flex flex-column mt-1">
         <div class="nav-scroll-container village-nav" id="villageTabs">
-            </div>
+        </div>
         
         <div class="nav-scroll-container farmer-sub-nav" id="farmerTabs">
-            </div>
+        </div>
+    </div>
+
+    <div id="today-summary-area" class="px-2 py-1" style="display:none; background-color: #fff3cd; border-bottom: 1px solid #ffeeba;">
+        <div id="today-task-list" class="small text-dark fw-bold"></div>
     </div>
     
     <div class="d-flex gap-2 mt-2 flex-wrap justify-content-center">
@@ -390,48 +388,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseThree" style="cursor: pointer;" id="hdr-logic">3. Logic Configuration (Formulas)</div>
-                <div id="collapseThree" class="collapse">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-sm logic-viewer-table mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>日本語</th>
-                                        <th>English</th>
-                                        <th>Bengali</th>
-                                        <th>Logic_En</th>
-                                        <th>Logic_Ben</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td>播種日</td><td>Sowing</td><td>বপন</td><td>Setting date</td><td>তারিখ নির্ধারণ (日付設定)</td></tr>
-                                    <tr><td>移植日</td><td>Transplanting</td><td>চারা রোপণ</td><td>Sowing + 40 days</td><td>বপন + ৪০ দিন</td></tr>
-                                    <tr><td>ピタン開始</td><td>Pitan Start</td><td>পিতান शुरू</td><td>Transplanting + Pitan start after transplanting</td><td>চারা রোপণ + চারা রোপণের পর পিতান শুরু</td></tr>
-                                    <tr><td>ピタン終了</td><td>Pitan End</td><td>পিতান শেষ</td><td>Pitan Start + Pitan Duration</td><td>পিতান शुरू + পিতানের সময়কাল</td></tr>
-                                    <tr><td>中干し開始</td><td>MD Start</td><td>エムডি শুরু</td><td>Sowing + MD End</td><td>বপন + বীজ বপনের পর এমডি শুরু</td></tr>
-                                    <tr><td>幼穂形成確認開始</td><td>Panicle Initiation Check start</td><td>শীষ আসার পরীক্ষা শুরু</td><td>MD start + Panicle Initiation check (day after MD Start)</td><td>エムডি शुरू + শীষ আসার পরীক্ষা (エムডি শুরুর পরের দিন)</td></tr>
-                                    <tr><td>中干し終了</td><td>MD End</td><td>エムডি শেষ</td><td>MD Start + MD Duration</td><td>エムডি शुरू + এমডি সময়কাল</td></tr>
-                                    <tr><td>中干し後灌漑開始</td><td>Flooding start (Panicle initiation)</td><td>প্লাবন শুরু (শীষ আসার সময়)</td><td>Heading - Flooding during panicle initiation before heading. ただし、Manual Young Panicle (1-2mm)に入力があればその値を用いてる。</td><td>শীষ আসা - (শীষ আসার সময় প্লাবন সময়কাল) তবে, ম্যানুয়াল কচি শীষ (১-২ মিমি) 에 ইনপুট থাকলে সেই মান ব্যবহার করা হবে।</td></tr>
-                                    <tr><td>中干し最後の灌漑</td><td>Flooding end</td><td>প্লাবন শেষ</td><td>Flooding Start (Panicle initiation) - (Flooding during panicle initiation before heading  - 3F4D start before heading)</td><td>প্লাবন শুরু - (শীষ আসার সময় প্লাবন - ৩এফ৪ডি শুরু)</td></tr>
-                                    <tr><td>3F4D　1サイクル目</td><td>3F4D_1 (Start)</td><td>৩এফ৪ডি_১ (শুরু)</td><td>Flooding end</td><td>প্লাবন শেষ</td></tr>
-                                    <tr><td>3F4D　2サイクル目</td><td>3F4D_2</td><td>৩এফ৪ডি_২</td><td>3F4D_1 (Start) + 7</td><td>৩এফ৪ডি_১ + ৭ দিন</td></tr>
-                                    <tr><td>3F4D　3サイクル目</td><td>3F4D_3</td><td>৩এফ৪ডি_৩</td><td>3F4D_2 (Start) + 7</td><td>৩এফ৪ডি_２ + ৭ দিন</td></tr>
-                                    <tr><td>出穂日</td><td>Heading</td><td>শীষ আসা</td><td>Heading + Heading day after sowing</td><td>শীষ আসা + বীজ বপনের পর শীষ আসার দিন</td></tr>
-                                    <tr><td>3F4D　4サイクル目</td><td>3F4D_4</td><td>৩এফ৪ডি_৪</td><td>3F4D_3 (Start) + 7</td><td>৩এফ৪ডি_３ +৭ দিন</td></tr>
-                                    <tr><td>3F4D　5サイクル目</td><td>3F4D_5</td><td>৩এফ৪ডি_৫</td><td>3F4D_4 (Start) + 7</td><td>৩এফ৪ডি_৪ + ৭ দিন</td></tr>
-                                    <tr><td>3F4D　6サイクル目</td><td>3F4D_6</td><td>৩এফ৪ডি_৬</td><td>3F4D_5 (Start) + 7</td><td>৩এফ৪ডি_৫ + ৭ দিন</td></tr>
-                                    <tr><td>3F4D　終了</td><td>3F4D End</td><td>৩এফ৪ডি শেষ</td><td>3F4D_6 + 7</td><td>৩এফ৪ডি_৬ +৭ দিন</td></tr>
-                                    <tr><td>最終灌漑</td><td>Last Irrigation</td><td>শেষ সেচ</td><td>3F4D End + 1</td><td>৩এফ৪ডি শেষ + ১ দিন</td></tr>
-                                    <tr><td>収穫</td><td>Harvesting</td><td>ফসল কাটা</td><td>Heading + Harvest after heading</td><td>শীষ আসা + শীষ আসার পর ফসল কাটা</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="col-md-8 main-panel">
@@ -546,9 +502,13 @@
         <div class="mb-3 border-top pt-2">
             <label class="form-label small fw-bold">Add Photo (Multiple)</label>
          <div class="d-flex gap-2">
-              <label class="btn btn-sm btn-outline-secondary w-100">
+              <label class="btn btn-sm btn-outline-secondary w-50">
                   📂 Album
                  <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
+               </label>
+               <label class="btn btn-sm btn-outline-primary w-50">
+                  📷 Camera
+                 <input type="file" accept="image/*" capture="environment" style="display: none;" onchange="previewPhoto(this)">
                </label>
          </div>
     
@@ -587,6 +547,79 @@
                         </thead>
                         <tbody id="allSchedulesBody">
                             </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="galleryTitle">Village Gallery</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-end mb-2">
+                    <button class="btn btn-primary btn-sm" onclick="downloadVillageGallery()">
+                        📥 Download ZIP (Photos + CSV)
+                    </button>
+                </div>
+                <div id="galleryContent" class="gallery-grid">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="logicModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logicModalTitle">Logic Configuration (Formulas)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm logic-viewer-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>日本語</th>
+                                <th>English</th>
+                                <th>Bengali</th>
+                                <th>Logic_En</th>
+                                <th>Logic_Ben</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>播種日</td><td>Sowing</td><td>বপন</td><td>Setting date</td><td>তারিখ নির্ধারণ</td></tr>
+                            <tr><td>移植日</td><td>Transplanting</td><td>চারা রোপণ</td><td>Sowing + 40 days</td><td>বপন + ৪০ দিন</td></tr>
+                            <tr><td>ピタン開始</td><td>Pitan Start</td><td>পিতান शुरू</td><td>Transplanting + Pitan start after transplanting</td><td>চারা রোপণ + চারা রোপণের পর পিতান শুরু</td></tr>
+                            <tr><td>ピタン終了</td><td>Pitan End</td><td>পিতান শেষ</td><td>Pitan Start + Pitan Duration</td><td>পিতান शुरू + পিতানের সময়কাল</td></tr>
+                            <tr><td>中干し開始</td><td>MD Start</td><td>এমডি शुरू</td><td>Sowing + MD End</td><td>বপন + বীজ বপনের পর এমডি শুরু</td></tr>
+                            <tr><td>幼穂形成確認開始</td><td>Panicle Initiation Check start</td><td>শীষ আসার পরীক্ষা শুরু</td><td>MD start + Panicle Initiation check (day after MD Start)</td><td>এমডি शुरू + শীষ আসার পরীক্ষা (এমডি শুরুর পরের দিন)</td></tr>
+                            <tr><td>中干し終了</td><td>MD End</td><td>এমডি শেষ</td><td>MD Start + MD Duration</td><td>এমডি शुरू + এমডি সময়কাল</td></tr>
+                            <tr><td>中干し後灌漑開始</td><td>Flooding start (Panicle initiation)</td><td>প্লাবন শুরু (শীষ আসার সময়)</td><td>Heading - Flooding during panicle initiation before heading. ただし、Manual Young Panicle (1-2mm)に入力があればその値を用いてる。</td><td>শীষ আসা - (শীষ আসার সময় প্লাবন সময়কাল) তবে, ম্যানুয়াল কচি শীষ (১-২ মিমি) 에 ইনপুট থাকলে সেই মান ব্যবহার করা হবে。</td></tr>
+                            <tr><td>中干し最後の灌漑</td><td>Flooding end</td><td>প্লাবন শেষ</td><td>Flooding Start (Panicle initiation) - (Flooding during panicle initiation before heading  - 3F4D start before heading)</td><td>প্লাবন শুরু - (শীষ আসার সময় প্লাবন - ৩এফ৪ডি শুরু)</td></tr>
+                            <tr><td>3F4D　1サイクル目</td><td>3F4D_1 (Start)</td><td>৩এফ৪ডি_১ (শুরু)</td><td>Flooding end</td><td>প্লাবন শেষ</td></tr>
+                            <tr><td>3F4D　2サイクル目</td><td>3F4D_2</td><td>৩এফ৪ডি_২</td><td>3F4D_1 (Start) + 7</td><td>৩এফ৪ডি_১ + ৭ দিন</td></tr>
+                            <tr><td>3F4D　3サイクル目</td><td>3F4D_3</td><td>৩এফ৪ডি_৩</td><td>3F4D_2 (Start) + 7</td><td>৩এফ৪ডি_２ +７ দিন</td></tr>
+                            <tr><td>出穂日</td><td>Heading</td><td>শীষ আসা</td><td>Heading + Heading day after sowing</td><td>শীষ আসা + বীজ বপনের পর শীষ আসার দিন</td></tr>
+                            <tr><td>3F4D　4サイクル目</td><td>3F4D_4</td><td>৩এফ৪ডি_৪</td><td>3F4D_3 (Start) + 7</td><td>৩এফ৪ডি_３ +৭ দিন</td></tr>
+                            <tr><td>3F4D　5サイクル目</td><td>3F4D_5</td><td>৩এফ৪ডি_৫</td><td>3F4D_4 (Start) + 7</td><td>৩এফ৪ডি_৪ + ৭ দিন</td></tr>
+                            <tr><td>3F4D　6サイクル目</td><td>3F4D_6</td><td>৩এফ৪ডি_৬</td><td>3F4D_5 (Start) + 7</td><td>৩এফ৪ডি_৫ + ৭ দিন</td></tr>
+                            <tr><td>3F4D　終了</td><td>3F4D End</td><td>৩এফ৪ডি শেষ</td><td>3F4D_6 + 7</td><td>৩এফ৪ডি_৬ +৭ দিন</td></tr>
+                            <tr><td>最終灌漑</td><td>Last Irrigation</td><td>শেষ সেচ</td><td>3F4D End + 1</td><td>৩এফ৪ডি শেষ + ১ দিন</td></tr>
+                            <tr><td>収穫</td><td>Harvesting</td><td>ফসল কাটা</td><td>Heading + Harvest after heading</td><td>শীষ আসা + শীষ আসার পর ফসল কাটা</td></tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -640,7 +673,7 @@ const TRANSLATIONS = {
         add_farmer: "Add Farmer",
         basic_settings: "1. Basic settings (days)",
         date_settings: "2. Date Settings (Adjustable)",
-        logic_config: "3. Logic Configuration (Formulas)",
+        logic_config: "Logic Configuration (Formulas)",
         reset_farmer: "Reset Farmer",
         // Tabs
         tab_table: "Table List",
@@ -711,7 +744,9 @@ const TRANSLATIONS = {
         notif_tomorrow: "Tomorrow's task:",
         notif_no_tasks: "No tasks for today",
         btn_test_notif: "Send Test Notification",
-        lbl_log_irr: "Irrigation"
+        lbl_log_irr: "Irrigation",
+        all_schedules: "All Schedules",
+        gallery: "Gallery"
     },
     bn: {
         title: "৩এফ৪ডি প্রো সময়সূচী",
@@ -721,7 +756,7 @@ const TRANSLATIONS = {
         add_farmer: "নতুন কৃষক",
         basic_settings: "১. মৌলিক সেটিংস (দিন)",
         date_settings: "২. তারিখ সেটিংস (পরিবর্তনযোগ্য)",
-        logic_config: "৩. লজিক কনফিগারেশন (সূত্র)",
+        logic_config: "লজিক কনফিগারেশন (সূত্র)",
         reset_farmer: "রিসেট",
         // Tabs
         tab_table: "টেবিল তালিকা",
@@ -738,7 +773,7 @@ const TRANSLATIONS = {
         tp: "চারা রোপণ *",
         p_start: "পিতান শুরু",
         p_end: "পিতান শেষ",
-        md_start: "エムডি শুরু",
+        md_start: "এমডি শুরু",
         pi_check_start: "শীষ আসার পরীক্ষা শুরু",
         md_end: "এমডি শেষ",
         pi_flood_start: "প্লাবন শুরু (শীষ আসার সময়)",
@@ -758,8 +793,8 @@ const TRANSLATIONS = {
         lbl_p_start_off: "চারা রোপণের পর পিতান শুরু",
         lbl_p_dur: "পিতানের সময়কাল",
         lbl_md_start_off: "বীজ বপনের পর এমডি শুরু",
-        lbl_md_dur: "エムডি সময়কাল",
-        lbl_pi_check_off: "শীষ আসার পরীক্ষা (エムডি শুরুর পরের দিন)",
+        lbl_md_dur: "এমডি সময়কাল",
+        lbl_pi_check_off: "শীষ আসার পরীক্ষা (এমডি শুরুর পরের দিন)",
         lbl_hd_das: "বীজ বপনের পর শীষ আসার দিন",
         lbl_pi_off: "শীষ আসার সময় প্লাবন সময়কাল",
         lbl_f3d_off: "শীষ আসার আগে ৩এফ৪ডি শুরু",
@@ -792,7 +827,9 @@ const TRANSLATIONS = {
         notif_tomorrow: "আগামীকালের কাজ:", // Tomorrow's task:
         notif_no_tasks: "আজ কোনো কাজ নেই", // No tasks today
         btn_test_notif: "টেস্ট নোটিফিকেশন পাঠান",
-        lbl_log_irr: "সেচ"
+        lbl_log_irr: "সেच",
+        all_schedules: "সকল সময়সূচী",
+        gallery: "গ্যালারি"
     }
 };
 
@@ -829,8 +866,8 @@ function changeLanguage(lang) {
     }
 
     const staticIds = {
-        'hdr-settings': 'basic_settings', 'hdr-dates': 'date_settings', 'hdr-logic': 'logic_config',
-        'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps'
+        'hdr-settings': 'basic_settings', 'hdr-dates': 'date_settings',
+        'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps', 'logicModalTitle': 'logic_config'
     };
     for(const [id, key] of Object.entries(staticIds)) {
         const el = document.getElementById(id);
@@ -880,6 +917,15 @@ function changeLanguage(lang) {
     const shareBtn = document.querySelector('.btn-label-share');
     if(shareBtn) shareBtn.innerText = t('btn_share');
 
+    const allScheduleBtn = document.querySelector('.btn-label-all-schedules');
+    if(allScheduleBtn) allScheduleBtn.innerText = "📋 " + t('all_schedules');
+
+    const galleryBtn = document.querySelector('.btn-label-gallery');
+    if(galleryBtn) galleryBtn.innerText = "📷 " + t('gallery');
+
+    const logicBtn = document.querySelector('.btn-label-logic-config');
+    if(logicBtn) logicBtn.innerText = "📐 " + t('logic_config');
+
     updateSizeUnitOptions();
     initInputs(); 
     loadActiveFarmer(); 
@@ -919,6 +965,8 @@ let memoModal;
 let tempPhotoData = []; // Array to store multiple photo data URLs
 let irrigationChart = null;
 let allSchedulesModalObj;
+let galleryModalObj;
+let logicModalObj;
 
 const dateKeys = [
     { id: 'sowing', type: 'base' },
@@ -1237,6 +1285,7 @@ function recalculate(triggerId) {
     }
     saveToLocal(); 
     refreshViews();
+    renderNav(); // Update badges when dates change
 }
 
 function formatDateISO(d) {
@@ -1467,10 +1516,17 @@ function updateFromManual(id) {
 function renderNav() {
     const vContainer = document.getElementById('villageTabs');
     const fContainer = document.getElementById('farmerTabs');
+    const summaryArea = document.getElementById('today-summary-area');
+    const summaryList = document.getElementById('today-task-list');
+    
     vContainer.innerHTML = "";
     fContainer.innerHTML = "";
+    summaryList.innerHTML = "";
+    summaryArea.style.display = "none";
 
     const villages = [...new Set(farmers.map(f => f.village || "Unassigned"))];
+    const todayStr = formatDateISO(new Date());
+    let todayTasks = [];
 
     if (farmers[activeIdx]) {
         activeVillage = farmers[activeIdx].village || "Unassigned";
@@ -1478,6 +1534,26 @@ function renderNav() {
         activeVillage = villages.length > 0 ? villages[0] : null;
     }
 
+    // --- Collect Today's Tasks ---
+    farmers.forEach(f => {
+        const tasks = [];
+        dateKeys.forEach(k => {
+            if (f.dates[k.id] === todayStr) tasks.push(t(k.id));
+        });
+        if (f.use_yp && f.dates['yp'] === todayStr) tasks.push(t('yp_label'));
+        
+        if (tasks.length > 0) {
+            todayTasks.push({ village: f.village || "Unassigned", name: f.name, jobs: tasks });
+        }
+    });
+
+    if (todayTasks.length > 0) {
+        summaryArea.style.display = "block";
+        summaryList.innerHTML = "📅 " + (currentLang === 'bn' ? "আজকের কাজ: " : "Today's Tasks: ") + 
+            todayTasks.map(x => `[${x.village}] ${x.name}: ${x.jobs.join(', ')}`).join(" | ");
+    }
+
+    // --- Village Nav ---
     const addVBtn = document.createElement('button');
     addVBtn.className = "btn btn-outline-secondary btn-add-item me-2";
     addVBtn.innerText = "+";
@@ -1485,25 +1561,35 @@ function renderNav() {
     addVBtn.onclick = addNewVillage;
     vContainer.appendChild(addVBtn);
 
-    if (villages.length > 0) {
-        villages.forEach(vName => {
-            const vBtn = document.createElement('div');
-            vBtn.className = `village-tab ${vName === activeVillage ? 'active' : ''}`;
-            vBtn.innerText = vName;
-            vBtn.id = `v-tab-${vName.replace(/\s+/g, '_')}`;
-            vBtn.onclick = () => {
-                activeVillage = vName;
-                const firstFarmerIdx = farmers.findIndex(f => (f.village || "Unassigned") === vName);
-                if (firstFarmerIdx !== -1) {
-                    activeIdx = firstFarmerIdx;
-                    loadActiveFarmer();
-                    renderNav();
-                }
-            };
-            vContainer.appendChild(vBtn);
-        });
-    }
+    villages.forEach(vName => {
+        const vBtn = document.createElement('div');
+        vBtn.className = `village-tab ${vName === activeVillage ? 'active' : ''}`;
+        vBtn.innerText = vName;
+        vBtn.id = `v-tab-${vName.replace(/\s+/g, '_')}`;
 
+        // ★ Add Badge if task exists
+        const hasTaskInVillage = todayTasks.some(t => t.village === vName);
+        if (hasTaskInVillage) {
+            const badge = document.createElement('span');
+            badge.className = "badge rounded-pill bg-danger ms-1";
+            badge.innerText = "!";
+            badge.style.fontSize = "0.6rem";
+            vBtn.appendChild(badge);
+        }
+
+        vBtn.onclick = () => {
+            activeVillage = vName;
+            const firstFarmerIdx = farmers.findIndex(f => (f.village || "Unassigned") === vName);
+            if (firstFarmerIdx !== -1) {
+                activeIdx = firstFarmerIdx;
+                loadActiveFarmer();
+                renderNav();
+            }
+        };
+        vContainer.appendChild(vBtn);
+    });
+
+    // --- Farmer Nav ---
     if (activeVillage) {
         const addFBtn = document.createElement('button');
         addFBtn.className = "btn btn-outline-primary btn-add-item me-2";
@@ -1520,6 +1606,15 @@ function renderNav() {
             const fBtn = document.createElement('div');
             fBtn.className = `farmer-tab ${f.originalIndex === activeIdx ? 'active' : ''}`;
             fBtn.innerText = f.name;
+
+            // ★ Highlight Farmer if task exists
+            const hasTaskToday = todayTasks.some(t => t.village === (f.village || "Unassigned") && t.name === f.name);
+            if (hasTaskToday) {
+                fBtn.style.border = "2px solid #ffc107";
+                fBtn.style.boxShadow = "0 0 5px #ffc107";
+                fBtn.innerText += " 💧";
+            }
+
             fBtn.onclick = () => {
                 activeIdx = f.originalIndex; 
                 loadActiveFarmer();
@@ -1528,10 +1623,6 @@ function renderNav() {
             fContainer.appendChild(fBtn);
         });
     }
-}
-
-function renderFarmerTabs() {
-    renderNav();
 }
 
 function addNewVillage() {
@@ -1544,7 +1635,6 @@ function addNewVillage() {
         renderNav();
         return;
     }
-    // 新しいVillageをfarmersの先頭（に属するFarmer）として追加することで、一番左に表示させる
     createFarmerInVillage(vName, "Farmer 1");
 }
 
@@ -2134,9 +2224,116 @@ function switchToFarmer(idx) {
     }
 }
 
+// --- Gallery Functions ---
+function openGallery() {
+    if (!activeVillage) return alert("No village selected.");
+    if (!galleryModalObj) {
+        galleryModalObj = new bootstrap.Modal(document.getElementById('galleryModal'));
+    }
+    document.getElementById('galleryTitle').innerText = `${activeVillage} Gallery`;
+    const container = document.getElementById('galleryContent');
+    container.innerHTML = "";
+    
+    // Filter farmers in active village
+    const villageFarmers = farmers.filter(f => (f.village || "Unassigned") === activeVillage);
+    let photoCount = 0;
+
+    villageFarmers.forEach(f => {
+        if(f.photos) {
+            Object.keys(f.photos).sort().reverse().forEach(date => {
+                const photoArray = Array.isArray(f.photos[date]) ? f.photos[date] : [f.photos[date]];
+                photoArray.forEach(pData => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    item.innerHTML = `
+                        <img src="${pData}" onclick="openPhotoFull(this.src)">
+                        <div class="gallery-info fw-bold">${f.name}</div>
+                        <div class="gallery-info">${date}</div>
+                    `;
+                    container.appendChild(item);
+                    photoCount++;
+                });
+            });
+        }
+    });
+
+    if (photoCount === 0) {
+        container.innerHTML = `<div class="col-12 text-center text-muted p-4">No photos in this village.</div>`;
+    }
+    galleryModalObj.show();
+}
+
+function openPhotoFull(src) {
+    const win = window.open("", "_blank");
+    win.document.write(`<img src="${src}" style="width:100%">`);
+}
+
+async function downloadVillageGallery() {
+    if (!activeVillage) return;
+    const villageFarmers = farmers.filter(f => (f.village || "Unassigned") === activeVillage);
+    
+    const zip = new JSZip();
+    let csvContent = "\uFEFFDate,Village,Farmer,Filename\n";
+    let count = 0;
+
+    showLoading();
+
+    for (const f of villageFarmers) {
+        if (f.photos) {
+            for (const date of Object.keys(f.photos)) {
+                const photoArray = Array.isArray(f.photos[date]) ? f.photos[date] : [f.photos[date]];
+                
+                for (let i = 0; i < photoArray.length; i++) {
+                    const dataUrl = photoArray[i];
+                    const blob = await dataURLtoBlob(dataUrl);
+                    // Naming Convention: Date_Village_Farmer_Index
+                    const safeDate = date.replace(/[^0-9-]/g, '');
+                    const safeVill = (f.village || "Unassigned").replace(/[^a-zA-Z0-9]/g, '_');
+                    const safeName = f.name.replace(/[^a-zA-Z0-9]/g, '_');
+                    const fileName = `${safeDate}_${safeVill}_${safeName}_${i+1}.jpg`;
+                    
+                    zip.file(fileName, blob);
+                    csvContent += `${date},"${f.village || ""}",${f.name},${fileName}\n`;
+                    count++;
+                }
+            }
+        }
+    }
+
+    if (count === 0) {
+        hideLoading();
+        alert("No photos to download.");
+        return;
+    }
+
+    zip.file("index.csv", csvContent);
+    
+    zip.generateAsync({type:"blob"}).then(function(content) {
+        const todayStr = new Date().toISOString().slice(0,10);
+        shareOrDownload(content, `${activeVillage}_Gallery_${todayStr}.zip`);
+        hideLoading();
+    });
+}
+
+function dataURLtoBlob(dataurl) {
+    return new Promise((resolve) => {
+        fetch(dataurl).then(res => res.blob()).then(blob => resolve(blob));
+    });
+}
+
+// --- Logic Modal Function ---
+function openLogicModal() {
+    if (!logicModalObj) {
+        logicModalObj = new bootstrap.Modal(document.getElementById('logicModal'));
+    }
+    logicModalObj.show();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     changeLanguage(localStorage.getItem('f3d_lang') || 'en');
     memoModal = new bootstrap.Modal(document.getElementById('memoModal'));
+    galleryModalObj = new bootstrap.Modal(document.getElementById('galleryModal'));
+    logicModalObj = new bootstrap.Modal(document.getElementById('logicModal'));
     initApp(); 
     calendar = new FullCalendar.Calendar(document.getElementById('calendar'), { 
         initialView: 'dayGridMonth', 
