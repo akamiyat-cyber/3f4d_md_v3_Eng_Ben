@@ -545,15 +545,10 @@
         <div class="mb-3 border-top pt-2">
             <label class="form-label small fw-bold">Add Photo (Multiple)</label>
          <div class="d-flex gap-2">
-              <label class="btn btn-sm btn-outline-secondary w-50">
+              <label class="btn btn-sm btn-outline-secondary w-100">
                   📂 Album
                  <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
                </label>
-        
-                <label class="btn btn-sm btn-outline-primary w-50">
-                   📷 Camera
-                   <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display: none;" onchange="previewPhoto(this)">
-                </label>
          </div>
     
          <div id="photoPreviewContainer" class="d-flex flex-wrap gap-2 mt-2">
@@ -1351,20 +1346,11 @@ function handleDateClick(info) {
     renderPhotoPreviews();
 
     document.getElementById('photoInput').value = "";
-    if(document.getElementById('photoInputCamera')) document.getElementById('photoInputCamera').value = "";
     
     memoModal.show();
 }
 
 function previewPhoto(input) {
-    if (input.id === 'photoInput') {
-        const cam = document.getElementById('photoInputCamera');
-        if(cam) cam.value = '';
-    } else if (input.id === 'photoInputCamera') {
-        const album = document.getElementById('photoInput');
-        if(album) album.value = '';
-    }
-
     if (input.files && input.files[0]) {
         const file = input.files[0];
         const reader = new FileReader();
@@ -1438,7 +1424,6 @@ function removePhoto(index) {
 function clearPhoto() {
     tempPhotoData = [];
     document.getElementById('photoInput').value = "";
-    if(document.getElementById('photoInputCamera')) document.getElementById('photoInputCamera').value = "";
     renderPhotoPreviews();
 }
 
