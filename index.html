@@ -540,20 +540,33 @@
 
         <div class="mb-3 border-top pt-2">
             <label class="form-label small fw-bold">Add Photo</label>
-            <input type="file" id="photoInput" accept="image/*" class="form-control form-control-sm" onchange="previewPhoto(this)">
+         <div class="d-flex gap-2">
+              <label class="btn btn-sm btn-outline-secondary w-50">
+                  📂 Album
+                 <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
+               </label>
+        
+                <label class="btn btn-sm btn-outline-primary w-50">
+                   📷 Camera
+                   <input type="file" id="photoInputCamera" accept="image/*" capture="environment" style="display: none;" onchange="previewPhoto(this)">
+                </label>
+         </div>
+    
+         <div id="photoPreviewContainer" class="text-center d-none mt-2">
+                <img id="photoPreviewImg" class="img-fluid rounded" style="max-height: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+             <div class="mt-2">
+                 <button class="btn btn-xs btn-outline-danger" onclick="clearPhoto()">Remove Photo</button>
+              </div>
+           </div>
         </div>
         
-        <div id="photoPreviewContainer" class="text-center d-none">
-            <img id="photoPreviewImg" class="img-fluid rounded" style="max-height: 200px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <div class="mt-2">
-                <button class="btn btn-xs btn-outline-danger" onclick="clearPhoto()">Remove Photo</button>
-            </div>
+        </div> 
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+           <button type="button" class="btn btn-primary" onclick="saveMemo()">Save Note</button>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary btn-sm" onclick="saveMemo()">Save</button>
-      </div>
+
+      
     </div>
   </div>
 </div>
@@ -1326,36 +1339,84 @@ function handleDateClick(info) {
     else { document.getElementById('irr_time').value = ""; document.getElementById('irr_unit').value = "min"; }
     clearPhotoUI();
     document.getElementById('photoInput').value = "";
+    // ↓この行を追加してください
+    if(document.getElementById('photoInputCamera')) document.getElementById('photoInputCamera').value = "";
     tempPhotoData = null;
     if(f.photos && f.photos[date]) { tempPhotoData = f.photos[date]; showPreview(tempPhotoData); } 
     memoModal.show();
 }
 
 function previewPhoto(input) {
+    // ▼▼▼ 追加修正部分：片方が選ばれたら、もう片方の入力をクリアする ▼▼▼
+    if (input.id === 'photoInput') {
+        // アルバムが選ばれた場合、カメラの入力をリセット
+        const cam = document.getElementById('photoInputCamera');
+        if(cam) cam.value = '';
+    } else if (input.id === 'photoInputCamera') {
+        // カメラが選ばれた場合、アルバムの入力をリセット
+        const album = document.getElementById('photoInput');
+        if(album) album.value = '';
+    }
+    // ▲▲▲ 追加修正部分ここまで ▲▲▲
+
+    // ファイルが選択されているか確認
     if (input.files && input.files[0]) {
+        const file = input.files[0];
         const reader = new FileReader();
+
         reader.onload = function(e) {
             const img = new Image();
-            img.src = e.target.result;
-            img.onload = () => {
+            img.onload = function() {
+                // 画像のリサイズ処理（LocalStorage容量オーバー防止のため重要）
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600; 
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scaleSize;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                tempPhotoData = canvas.toDataURL('image/jpeg', 0.6); 
+                
+                // 最大サイズ設定 (例: 800px)
+                const MAX_WIDTH = 800;
+                const MAX_HEIGHT = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // グローバル変数 tempPhotoData にデータを格納
+                // (saveMemo関数でこれが保存されます)
+                tempPhotoData = canvas.toDataURL('image/jpeg', 0.7);
+                
+                // プレビュー表示
                 showPreview(tempPhotoData);
             }
+            img.src = e.target.result;
         }
-        reader.readAsDataURL(input.files[0]);
+        reader.readAsDataURL(file);
     }
 }
 
 function showPreview(dataUrl) {
-    document.getElementById('photoPreviewImg').src = dataUrl;
-    document.getElementById('photoPreviewContainer').classList.remove('d-none');
+    const container = document.getElementById('photoPreviewContainer');
+    const img = document.getElementById('photoPreviewImg');
+    
+    if (dataUrl) {
+        img.src = dataUrl;
+        container.classList.remove('d-none'); // 表示
+    } else {
+        img.src = '';
+        container.classList.add('d-none'); // 非表示
+    }
 }
 
 function clearPhoto() {
