@@ -2791,5 +2791,43 @@ function syncToFirestore() {
     <p class="mb-0">Use this application at your own risk.</p>
 </footer>
 
+<!-- Dify Chatbot Embed -->
+<script>
+ window.difyChatbotConfig = {
+  token: 'C0xCBfGt8kgsK54M'
+ }
+</script>
+<script src="https://udify.app/embed.min.js" id="C0xCBfGt8kgsK54M" defer></script>
+<style>
+  #dify-chatbot-bubble-button {
+    background-color: #1C64F2 !important;
+  }
+  #dify-chatbot-bubble-window {
+    width: 24rem !important;
+    height: 40rem !important;
+  }
+  .dify-testing-badge {
+    position: fixed;
+    bottom: 85px;
+    right: 20px;
+    z-index: 2147483647; /* Keep it on top */
+    background: #fef08a;
+    color: #854d0e;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    pointer-events: none; /* Let clicks pass through if needed */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    border: 1px solid #fde047;
+    animation: bounceBadge 2s infinite;
+  }
+  @keyframes bounceBadge {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+</style>
+<div class="dify-testing-badge">🤖 AI Chat (Beta / テスト中)</div>
+
 </body>
 </html>
