@@ -869,6 +869,7 @@ const TRANSLATIONS = {
         delete: "Delete farmer",
         add_farmer: "Add Farmer",
         basic_settings: "1. Basic settings (days)",
+        basic_settings_simple: "1. Basic settings (Simple Mode)",
         date_settings: "2. Date Settings (Adjustable)",
         logic_config: "Logic Configuration (Formulas)",
         reset_farmer: "Reset Farmer",
@@ -952,6 +953,7 @@ const TRANSLATIONS = {
         delete: "কৃষক মুছুন",
         add_farmer: "নতুন কৃষক",
         basic_settings: "১. মৌলিক সেটিংস (দিন)",
+        basic_settings_simple: "১. মৌলিক সেটিংস (সহজ মোড)",
         date_settings: "২. তারিখ সেটিংস (পরিবর্তনযোগ্য)",
         logic_config: "লজিক কনফিগারেশন (সূত্র)",
         reset_farmer: "রিসেট",
@@ -1084,7 +1086,7 @@ function changeLanguage(lang) {
     }
 
     const staticIds = {
-        'hdr-settings': 'basic_settings', 'hdr-dates': 'date_settings',
+        'hdr-settings': 'basic_settings', 'hdr-settings-simple': 'basic_settings_simple', 'hdr-dates': 'date_settings',
         'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps', 'logicModalTitle': 'logic_config'
     };
     for(const [id, key] of Object.entries(staticIds)) {
