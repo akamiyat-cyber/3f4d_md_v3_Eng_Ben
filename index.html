@@ -334,15 +334,7 @@
             <button class="btn btn-sm btn-outline-info btn-label-gallery" onclick="openGallery()" title="Village Gallery">📷 Gallery</button>
             <button class="btn btn-sm btn-outline-primary btn-label-all-schedules" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules</button>
             
-            <div class="d-flex gap-1 align-items-center">
-                <div class="input-group input-group-sm" style="width: 140px; flex-wrap: nowrap;">
-                    <input type="password" id="firebase-group-id" class="form-control" placeholder="Group ID" style="font-size: 0.75rem; border-color: #e2e8f0;" value="my-team" onchange="if(typeof reconnectSync === 'function') reconnectSync()" title="合言葉（Group ID）を入力してデータを共有します">
-                    <button class="btn btn-outline-secondary" type="button" onclick="toggleGroupIdVisibility()" style="padding: 0 8px; border-color: #e2e8f0; background: #fff; font-size: 0.8rem;" title="Show/Hide Group ID">👁️</button>
-                </div>
-                <button id="firebase-login-btn" class="btn btn-sm" style="background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 600; white-space: nowrap;" onclick="toggleFirebaseLogin()">🔒 Login</button>
-                <span id="sync-status" class="badge" style="background-color: #94a3b8; display: none; font-size: 0.7rem; padding: 5px 8px; border-radius: 12px;">Offline</span>
-            </div>
-            
+
             <select id="mode-selector" class="form-select form-select-sm" style="width: auto; margin-right: 5px;" onchange="changeMode(this.value)">
                 <option value="professional">Professional</option>
                 <option value="simple">Simple</option>
@@ -357,6 +349,20 @@
                     ⚙️
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><h6 class="dropdown-header text-primary">Admin / Sync</h6></li>
+                    <li class="px-3 py-2" onclick="event.stopPropagation()">
+                        <div class="d-flex flex-column gap-2">
+                            <div class="input-group input-group-sm" style="flex-wrap: nowrap;">
+                                <input type="password" id="firebase-group-id" class="form-control" placeholder="Group ID" style="font-size: 0.75rem; border-color: #e2e8f0;" value="my-team" onchange="if(typeof reconnectSync === 'function') reconnectSync()" title="合言葉">
+                                <button class="btn btn-outline-secondary" type="button" onclick="toggleGroupIdVisibility()" style="padding: 0 8px; border-color: #e2e8f0; background: #fff; font-size: 0.8rem;" title="Show/Hide">👁️</button>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button id="firebase-login-btn" class="btn btn-sm w-100 me-2" style="background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 600; white-space: nowrap;" onclick="toggleFirebaseLogin()">🔒 Login</button>
+                                <span id="sync-status" class="badge" style="background-color: #94a3b8; display: none; font-size: 0.7rem; padding: 5px 8px; border-radius: 12px;">Offline</span>
+                            </div>
+                        </div>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header">Backup & Export　ব্যাকআপ এবং এক্সপোর্ট</h6></li>
                     <li><button class="dropdown-item" onclick="exportJSON('all')">📥 Backup All (JSON) সব ব্যাকআপ</button></li>
                     <li><button class="dropdown-item" onclick="exportJSON('current')">📥 Backup Current (JSON) বর্তমান ব্যাকআপ</button></li>
