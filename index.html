@@ -20,6 +20,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
@@ -329,6 +334,12 @@
             <button class="btn btn-sm btn-outline-info btn-label-gallery" onclick="openGallery()" title="Village Gallery">📷 Gallery</button>
             <button class="btn btn-sm btn-outline-primary btn-label-all-schedules" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules</button>
             
+            <div class="d-flex gap-1 align-items-center">
+                <input type="text" id="firebase-group-id" class="form-control form-control-sm" placeholder="Group ID" style="width: 100px; font-size: 0.75rem;" value="my-team" onchange="if(typeof reconnectSync === 'function') reconnectSync()" title="合言葉（Group ID）を入力してデータを共有します">
+                <button id="firebase-login-btn" class="btn btn-sm" style="background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 600; white-space: nowrap;" onclick="toggleFirebaseLogin()">🔒 Login</button>
+                <span id="sync-status" class="badge" style="background-color: #94a3b8; display: none; font-size: 0.7rem; padding: 5px 8px; border-radius: 12px;">Offline</span>
+            </div>
+            
             <select id="mode-selector" class="form-select form-select-sm" style="width: auto; margin-right: 5px;" onchange="changeMode(this.value)">
                 <option value="professional">Professional</option>
                 <option value="simple">Simple</option>
@@ -581,7 +592,20 @@
                     </div>
                 </div>
                 
-                <div class="tab-pane fade" id="tab-cal"><div id="calendar"></div></div>
+                <!-- Calendar Tab -->
+                <div class="tab-pane fade" id="tab-cal">
+                    <div id="weather-widget" class="card mb-3" style="display: none; background: linear-gradient(to right, #e0f2fe, #f0fdfa); border: 1px solid #bae6fd;">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #0369a1;">🌤️ 7-Day Weather Forecast <span id="weather-location-label" class="text-muted fw-normal"></span></span>
+                            </div>
+                            <div class="d-flex gap-2 overflow-auto pb-1" id="weather-forecast-container" style="scrollbar-width: thin;">
+                                <!-- Weather items injected here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div id="calendar"></div>
+                </div>
                 
                 <div class="tab-pane fade" id="tab-memos"><div id="memo_log_container" class="p-1"></div></div>
 
@@ -1223,6 +1247,7 @@ async function initApp() {
 async function saveToLocal() { 
     if(farmers[activeIdx]) {
         await db.farmers.put(farmers[activeIdx]);
+        if (typeof syncToFirestore === 'function') syncToFirestore();
     }
 }
 
@@ -1274,6 +1299,11 @@ function loadActiveFarmer() {
     if (calendar) {
         calendar.render(); 
     }
+    if (typeof fetchWeather === 'function' && f.coordinates) {
+        fetchWeather(f.coordinates);
+    } else if (typeof fetchWeather === 'function') {
+        document.getElementById('weather-widget').style.display = 'none';
+    }
 }
 
 function updateProfile() {
@@ -1295,6 +1325,7 @@ function getGPS() {
             document.getElementById('prof_coords').value = coords;
             farmers[activeIdx].coordinates = coords;
             saveToLocal();
+            if (typeof fetchWeather === 'function') fetchWeather(coords);
             alert("Coordinates updated!");
         }, () => alert("Unable to retrieve location."));
     } else {
@@ -2558,6 +2589,161 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cal-tab').addEventListener('shown.bs.tab', () => { if (calendar) { calendar.updateSize(); calendar.render(); } });
     document.querySelectorAll('.config-panel input[type="number"]').forEach(el => { if(!el.id.startsWith('prof_')) el.onchange = () => recalculate('all'); });
 });
+
+/* --- Weather API (Open-Meteo) --- */
+async function fetchWeather(coordsStr) {
+    const container = document.getElementById('weather-forecast-container');
+    const widget = document.getElementById('weather-widget');
+    if (!coordsStr || coordsStr.trim() === '') {
+        widget.style.display = 'none';
+        return;
+    }
+    
+    const parts = coordsStr.split(',');
+    if (parts.length !== 2) return;
+    const lat = parseFloat(parts[0].trim());
+    const lon = parseFloat(parts[1].trim());
+    if (isNaN(lat) || isNaN(lon)) return;
+
+    try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        container.innerHTML = '';
+        const daily = data.daily;
+        
+        for (let i = 0; i < daily.time.length; i++) {
+            const dateStr = daily.time[i];
+            const maxT = Math.round(daily.temperature_2m_max[i]);
+            const minT = Math.round(daily.temperature_2m_min[i]);
+            const rain = daily.precipitation_sum[i];
+            const code = daily.weathercode[i];
+            
+            let emoji = '🌤️';
+            if (code <= 3) emoji = '☀️';
+            else if (code <= 48) emoji = '☁️';
+            else if (code <= 67) emoji = '🌧️';
+            else if (code <= 77) emoji = '❄️';
+            else if (code <= 82) emoji = '⛈️';
+            else if (code <= 99) emoji = '🌩️';
+            
+            const dateObj = new Date(dateStr);
+            const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+            const dayNum = dateObj.getDate();
+            
+            container.innerHTML += `
+                <div style="min-width: 65px; text-align: center; background: rgba(255,255,255,0.7); padding: 5px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.9);">
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 600;">${dayName} ${dayNum}</div>
+                    <div style="font-size: 1.2rem; margin: 2px 0;">${emoji}</div>
+                    <div style="font-size: 0.75rem; font-weight: 700;">${maxT}° <span style="color: #94a3b8; font-weight: 500;">${minT}°</span></div>
+                    ${rain > 0 ? `<div style="font-size: 0.65rem; color: #0284c7;">${rain}mm</div>` : `<div style="font-size: 0.65rem; color: transparent;">0</div>`}
+                </div>
+            `;
+        }
+        
+        document.getElementById('weather-location-label').innerText = `(${lat.toFixed(2)}, ${lon.toFixed(2)})`;
+        widget.style.display = 'block';
+    } catch (e) {
+        console.error("Weather fetch failed", e);
+        widget.style.display = 'none';
+    }
+}
+
+/* --- Firebase Sync Preparation --- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDpbfWAhEPW4mpQzZkmXgJhQn8aB7507kw",
+  authDomain: "f4d-scheduler.firebaseapp.com",
+  projectId: "f4d-scheduler",
+  storageBucket: "f4d-scheduler.firebasestorage.app",
+  messagingSenderId: "539276348560",
+  appId: "1:539276348560:web:b93861b33fbcb743b69c15",
+  measurementId: "G-7JV9WCDFBZ"
+};
+
+let firebaseApp, auth, fsDb, dbUnsubscribe;
+try {
+    if (Object.keys(firebaseConfig).length > 0) {
+        firebaseApp = firebase.initializeApp(firebaseConfig);
+        auth = firebase.auth();
+        fsDb = firebase.firestore();
+        
+        auth.onAuthStateChanged(user => {
+            const btn = document.getElementById('firebase-login-btn');
+            const status = document.getElementById('sync-status');
+            if (user) {
+                btn.innerText = "🔓 Logged In";
+                btn.style.backgroundColor = "var(--brand-primary)";
+                btn.style.color = "white";
+                status.style.display = 'inline-block';
+                status.innerText = "Sync Active";
+                status.style.backgroundColor = "var(--brand-primary)";
+                startFirestoreSync();
+            } else {
+                btn.innerText = "🔒 Sync Login";
+                btn.style.backgroundColor = "#f1f5f9";
+                btn.style.color = "#475569";
+                status.style.display = 'inline-block';
+                status.innerText = "Offline";
+                status.style.backgroundColor = "#94a3b8";
+                if (dbUnsubscribe) dbUnsubscribe();
+            }
+        });
+    }
+} catch(e) {
+    console.warn("Firebase config error:", e);
+}
+
+function toggleFirebaseLogin() {
+    if (!auth) return alert("Firebase is not configured yet! Please add the config to the code.");
+    if (auth.currentUser) {
+        auth.signOut();
+    } else {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(err => alert("Login failed: " + err.message));
+    }
+}
+
+function reconnectSync() {
+    if (dbUnsubscribe) dbUnsubscribe();
+    if (auth && auth.currentUser) startFirestoreSync();
+}
+
+function startFirestoreSync() {
+    if (!fsDb || !auth.currentUser) return;
+    const groupIdInput = document.getElementById('firebase-group-id').value.trim();
+    const docId = groupIdInput ? 'group_' + groupIdInput : auth.currentUser.uid;
+    const docRef = fsDb.collection('groups').doc(docId);
+    
+    dbUnsubscribe = docRef.onSnapshot(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            const localTimestamp = localStorage.getItem('last_sync_time') || 0;
+            // Add buffer to prevent feedback loop
+            if (data.timestamp > parseInt(localTimestamp) + 1000 && data.farmers) {
+                farmers = data.farmers;
+                localStorage.setItem('last_sync_time', data.timestamp);
+                db.farmers.bulkPut(farmers); // Update Dexie
+                renderNav();
+                loadActiveFarmer();
+            }
+        }
+    });
+}
+
+function syncToFirestore() {
+    if (auth && auth.currentUser && fsDb) {
+        const now = Date.now();
+        localStorage.setItem('last_sync_time', now);
+        const groupIdInput = document.getElementById('firebase-group-id').value.trim();
+        const docId = groupIdInput ? 'group_' + groupIdInput : auth.currentUser.uid;
+        
+        fsDb.collection('groups').doc(docId).set({
+            farmers: farmers,
+            timestamp: now
+        }, { merge: true }).catch(err => console.error("Sync failed", err));
+    }
+}
 </script>
 
 <footer class="text-center mt-5 mb-4 text-secondary" style="font-size: 0.75rem; border-top: 1px solid #dee2e6; padding-top: 20px;">
