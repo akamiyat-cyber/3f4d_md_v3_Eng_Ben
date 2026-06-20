@@ -336,8 +336,8 @@
             
 
             <select id="mode-selector" class="form-select form-select-sm" style="width: auto; margin-right: 5px;" onchange="changeMode(this.value)">
-                <option value="professional">Professional</option>
-                <option value="simple">Simple</option>
+                <option value="professional" id="opt_mode_prof">Professional</option>
+                <option value="simple" id="opt_mode_simple">Simple</option>
             </select>
             <select id="lang-selector" class="form-select form-select-sm" style="width: auto;" onchange="changeLanguage(this.value)">
                 <option value="en">English</option>
@@ -864,6 +864,8 @@ const CONVERSION_RATES = {
 const TRANSLATIONS = {
     en: {
         title: "3F4D+MD Pro",
+        mode_prof: "Professional",
+        mode_simple: "Simple",
         hard_reset: "Hard Reset",
         rename: "Rename farmer",
         delete: "Delete farmer",
@@ -952,7 +954,9 @@ const TRANSLATIONS = {
         gallery: "Gallery"
     },
     bn: {
-        title: "৩এফ৪ডি প্রো সময়সূচী",
+        title: "৩এফ৪ডি+এমডি প্রো",
+        mode_prof: "প্রফেশনাল",
+        mode_simple: "সহজ",
         hard_reset: "হার্ড রিসেট",
         rename: "কৃষকের নাম পরিবর্তন",
         delete: "কৃষক মুছুন",
@@ -1099,7 +1103,8 @@ function changeLanguage(lang) {
         'hdr-settings': 'basic_settings', 'hdr-settings-simple': 'basic_settings_simple', 'hdr-dates': 'date_settings',
         'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps', 'logicModalTitle': 'logic_config',
         'lbl-sm-note': 'sm_note', 'lbl-sm-md-start': 'sm_md_start', 'lbl-sm-md-dur': 'sm_md_dur',
-        'lbl-sm-flood-start': 'sm_flood_start', 'lbl-sm-flood-dur': 'sm_flood_dur'
+        'lbl-sm-flood-start': 'sm_flood_start', 'lbl-sm-flood-dur': 'sm_flood_dur',
+        'opt_mode_prof': 'mode_prof', 'opt_mode_simple': 'mode_simple'
     };
     for(const [id, key] of Object.entries(staticIds)) {
         const el = document.getElementById(id);
