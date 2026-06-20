@@ -525,32 +525,32 @@
                     <div class="card-body row g-2">
                         <div class="col-12">
                             <div class="alert alert-info py-1 px-2 m-0 text-dark" style="font-size: 0.75rem;">
-                                <strong>Note:</strong> For yield improvement, it is preferable to initiate MD when the average number of tillers (tillers with at least two leaves) of representative plants in the field exceeds 10 for Rod miniket and 11 for BRRI dhan50, representing 80% of the ideal panicle number.
+                                <strong id="lbl-sm-note">Note: For yield improvement, it is preferable to initiate MD when the average number of tillers (tillers with at least two leaves) of representative plants in the field exceeds 10 for Rod miniket and 11 for BRRI dhan50, representing 80% of the ideal panicle number.</strong>
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold">MD start after sowing seed (35–40 days after transplanting)</label>
+                            <label class="small fw-bold" id="lbl-sm-md-start">MD start after sowing seed (35–40 days after transplanting)</label>
                             <div class="d-flex align-items-center">
                                 <input type="number" id="sm_md_start_off" class="form-control form-control-sm" value="80">
                                 <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_md_start_off', 80)">↺</button>
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold">MD duration</label>
+                            <label class="small fw-bold" id="lbl-sm-md-dur">MD duration</label>
                             <div class="d-flex align-items-center">
                                 <input type="number" id="sm_md_dur" class="form-control form-control-sm" value="8">
                                 <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_md_dur', 8)">↺</button>
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold">Flooding start before 3F4D after sowing (around 95–105 days after sowing, or 50–60 days after transplanting)</label>
+                            <label class="small fw-bold" id="lbl-sm-flood-start">Flooding start before 3F4D after sowing (around 95–105 days after sowing, or 50–60 days after transplanting)</label>
                             <div class="d-flex align-items-center">
                                 <input type="number" id="sm_flood_start_off" class="form-control form-control-sm" value="95">
                                 <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_off', 95)">↺</button>
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold">Flooding duration before 3F4D (usually 4 days).</label>
+                            <label class="small fw-bold" id="lbl-sm-flood-dur">Flooding duration before 3F4D (usually 4 days).</label>
                             <div class="d-flex align-items-center">
                                 <input type="number" id="sm_flood_dur" class="form-control form-control-sm" value="4">
                                 <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_dur', 4)">↺</button>
@@ -870,6 +870,11 @@ const TRANSLATIONS = {
         add_farmer: "Add Farmer",
         basic_settings: "1. Basic settings (days)",
         basic_settings_simple: "1. Basic settings (Simple Mode)",
+        sm_note: "Note: For yield improvement, it is preferable to initiate MD when the average number of tillers (tillers with at least two leaves) of representative plants in the field exceeds 10 for Rod miniket and 11 for BRRI dhan50, representing 80% of the ideal panicle number.",
+        sm_md_start: "MD start after sowing seed (35–40 days after transplanting)",
+        sm_md_dur: "MD duration",
+        sm_flood_start: "Flooding start before 3F4D after sowing (around 95–105 days after sowing, or 50–60 days after transplanting)",
+        sm_flood_dur: "Flooding duration before 3F4D (usually 4 days).",
         date_settings: "2. Date Settings (Adjustable)",
         logic_config: "Logic Configuration (Formulas)",
         reset_farmer: "Reset Farmer",
@@ -954,6 +959,11 @@ const TRANSLATIONS = {
         add_farmer: "নতুন কৃষক",
         basic_settings: "১. মৌলিক সেটিংস (দিন)",
         basic_settings_simple: "১. মৌলিক সেটিংস (সহজ মোড)",
+        sm_note: "বিঃদ্রঃ ফলন বৃদ্ধির জন্য, মাঠের প্রতিনিধি গাছের গড় কুশির সংখ্যা (কমপক্ষে দুটি পাতাসহ) রড মিনিকেটের জন্য ১০ এবং ব্রি ধান৫০-এর জন্য ১১ অতিক্রম করলে (যা আদর্শ প্যানিকেল সংখ্যার ৮০%) MD শুরু করা ভালো।",
+        sm_md_start: "বীজ বপনের পর MD শুরু (চারা রোপণের ৩৫-৪০ দিন পর)",
+        sm_md_dur: "MD সময়কাল",
+        sm_flood_start: "3F4D এর আগে ফ্লাডিং শুরু (বপনের প্রায় ৯৫-১০৫ দিন পর, অথবা রোপণের ৫০-৬০ দিন পর)",
+        sm_flood_dur: "3F4D এর আগে ফ্লাডিং সময়কাল (সাধারণত ৪ দিন)।",
         date_settings: "২. তারিখ সেটিংস (পরিবর্তনযোগ্য)",
         logic_config: "লজিক কনফিগারেশন (সূত্র)",
         reset_farmer: "রিসেট",
@@ -1087,7 +1097,9 @@ function changeLanguage(lang) {
 
     const staticIds = {
         'hdr-settings': 'basic_settings', 'hdr-settings-simple': 'basic_settings_simple', 'hdr-dates': 'date_settings',
-        'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps', 'logicModalTitle': 'logic_config'
+        'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps', 'logicModalTitle': 'logic_config',
+        'lbl-sm-note': 'sm_note', 'lbl-sm-md-start': 'sm_md_start', 'lbl-sm-md-dur': 'sm_md_dur',
+        'lbl-sm-flood-start': 'sm_flood_start', 'lbl-sm-flood-dur': 'sm_flood_dur'
     };
     for(const [id, key] of Object.entries(staticIds)) {
         const el = document.getElementById(id);
