@@ -211,6 +211,10 @@
             <button class="btn btn-sm btn-outline-info btn-label-gallery" onclick="openGallery()" title="Village Gallery">📷 Gallery</button>
             <button class="btn btn-sm btn-outline-primary btn-label-all-schedules" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules</button>
             
+            <select id="mode-selector" class="form-select form-select-sm" style="width: auto; margin-right: 5px;" onchange="changeMode(this.value)">
+                <option value="professional">Professional</option>
+                <option value="simple">Simple</option>
+            </select>
             <select id="lang-selector" class="form-select form-select-sm" style="width: auto;" onchange="changeLanguage(this.value)">
                 <option value="en">English</option>
                 <option value="bn">বাংলা</option>
@@ -306,7 +310,7 @@
                 </div>
             </div>
 
-            <div class="card">
+            <div class="card" id="basic-settings-card">
                 <div class="card-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseOne" id="hdr-settings">1. Basic settings (days)</div>
                 <div id="collapseOne" class="collapse">
                     <div class="card-body row g-2">
@@ -371,6 +375,47 @@
                             <div class="d-flex align-items-center">
                                 <input type="number" id="hv_off" class="form-control form-control-sm" value="28">
                                 <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('hv_off', 28)">↺</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" id="simple-settings-card" style="display: none;">
+                <div class="card-header collapsed" data-bs-toggle="collapse" data-bs-target="#collapseSimple" id="hdr-settings-simple">1. Basic settings (Simple Mode)</div>
+                <div id="collapseSimple" class="collapse show">
+                    <div class="card-body row g-2">
+                        <div class="col-12">
+                            <div class="alert alert-info py-1 px-2 m-0 text-dark" style="font-size: 0.75rem;">
+                                <strong>Note:</strong> For yield improvement, it is preferable to initiate MD when the average number of tillers (tillers with at least two leaves) of representative plants in the field exceeds 10 for Rod miniket and 11 for BRRI dhan50, representing 80% of the ideal panicle number.
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold">MD start after sowing seed (35–40 days after transplanting)</label>
+                            <div class="d-flex align-items-center">
+                                <input type="number" id="sm_md_start_off" class="form-control form-control-sm" value="80">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_md_start_off', 80)">↺</button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold">MD duration</label>
+                            <div class="d-flex align-items-center">
+                                <input type="number" id="sm_md_dur" class="form-control form-control-sm" value="8">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_md_dur', 8)">↺</button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold">Flooding start before 3F4D after sowing (around 95–105 days after sowing, or 50–60 days after transplanting)</label>
+                            <div class="d-flex align-items-center">
+                                <input type="number" id="sm_flood_start_off" class="form-control form-control-sm" value="95">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_off', 95)">↺</button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="small fw-bold">Flooding duration before 3F4D (usually 4 days).</label>
+                            <div class="d-flex align-items-center">
+                                <input type="number" id="sm_flood_dur" class="form-control form-control-sm" value="4">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_dur', 4)">↺</button>
                             </div>
                         </div>
                     </div>
@@ -652,7 +697,8 @@ db.version(1).stores({
 // --- Constants for Default Settings ---
 const DEFAULT_SETTINGS = { 
     p_dur: 3, md_dur: 8, pi_check_off: 6, hd_das: 119, pi_off: 25, f3d_off: 21, hv_off: 28,
-    p_start_off: 25, md_start_off: 80 
+    p_start_off: 25, md_start_off: 80,
+    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 95, sm_flood_dur: 4
 };
 
 // Conversion Rates (Base: ha)
@@ -834,6 +880,27 @@ const TRANSLATIONS = {
 };
 
 let currentLang = localStorage.getItem('f3d_lang') || 'en';
+let currentMode = localStorage.getItem('f3d_mode') || 'professional';
+
+function changeMode(mode) {
+    currentMode = mode;
+    localStorage.setItem('f3d_mode', mode);
+    
+    const modeSelector = document.getElementById('mode-selector');
+    if (modeSelector) modeSelector.value = mode;
+    
+    const basicSettingsCard = document.getElementById('basic-settings-card');
+    if (basicSettingsCard) {
+        basicSettingsCard.style.display = (mode === 'simple') ? 'none' : 'block';
+    }
+
+    const simpleSettingsCard = document.getElementById('simple-settings-card');
+    if (simpleSettingsCard) {
+        simpleSettingsCard.style.display = (mode === 'simple') ? 'block' : 'none';
+    }
+    
+    recalculate('all');
+}
 
 function t(key) {
     return TRANSLATIONS[currentLang][key] || key;
@@ -1027,6 +1094,7 @@ async function initApp() {
 
         renderNav();
         loadActiveFarmer();
+        changeMode(currentMode);
         checkNotifications(); 
     } catch (e) {
         console.error("DB Error:", e);
@@ -1066,7 +1134,11 @@ function loadActiveFarmer() {
     if(f.fieldSizeUnit) document.getElementById('prof_size_unit').value = f.fieldSizeUnit;
     document.getElementById('prof_coords').value = f.coordinates || "";
 
-    ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off'].forEach(k => document.getElementById(k).value = f.settings[k] || (k === 'pi_check_off' ? 6 : ""));
+    ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off', 'sm_md_start_off', 'sm_md_dur', 'sm_flood_start_off', 'sm_flood_dur'].forEach(k => {
+        if(f.settings[k] === undefined) f.settings[k] = DEFAULT_SETTINGS[k];
+        const el = document.getElementById(k);
+        if(el) el.value = f.settings[k] || (k === 'pi_check_off' ? 6 : "");
+    });
     document.getElementById('p_start_off').value = f.settings.p_start_off !== undefined ? f.settings.p_start_off : 25;
     document.getElementById('md_start_off').value = f.settings.md_start_off !== undefined ? f.settings.md_start_off : 80;
 
@@ -1192,6 +1264,7 @@ function recalculate(triggerId) {
         else el.classList.remove('manual-highlight');
     });
     if(!f.autoDates) f.autoDates = {};
+    const isSimple = (currentMode === 'simple');
     const setV = (id, date) => { 
         if(!isNaN(date)) { 
             const dateStr = formatDateISO(date);
@@ -1206,14 +1279,22 @@ function recalculate(triggerId) {
     if (!document.getElementById('date_sowing').value) {
         if (document.getElementById('date_heading').value) setV('sowing', addDays(new Date(document.getElementById('date_heading').value), -parseInt(f.settings.hd_das)));
         else if (document.getElementById('date_tp').value) setV('sowing', addDays(new Date(document.getElementById('date_tp').value), -40));
-        else if (document.getElementById('date_md_start').value) setV('sowing', addDays(new Date(document.getElementById('date_md_start').value), -parseInt(f.settings.md_start_off)));
+        else if (document.getElementById('date_md_start').value) {
+            let mdOff = isSimple ? f.settings.sm_md_start_off : f.settings.md_start_off;
+            setV('sowing', addDays(new Date(document.getElementById('date_md_start').value), -parseInt(mdOff)));
+        }
     }
     const sowingStr = document.getElementById('date_sowing').value;
     const sowing = sowingStr ? new Date(sowingStr) : null;
     if (sowing) {
         setV('tp', addDays(sowing, 40));
-        setV('md_start', addDays(sowing, parseInt(f.settings.md_start_off)));
+        let mdOff = isSimple ? f.settings.sm_md_start_off : f.settings.md_start_off;
+        setV('md_start', addDays(sowing, parseInt(mdOff)));
         setV('heading', addDays(sowing, f.settings.hd_das));
+        
+        if (isSimple) {
+            setV('pi_flood_start', addDays(sowing, parseInt(f.settings.sm_flood_start_off)));
+        }
     }
     const tpStr = document.getElementById('date_tp').value;
     if (tpStr) {
@@ -1224,21 +1305,30 @@ function recalculate(triggerId) {
     const mdStartStr = document.getElementById('date_md_start').value;
     if (mdStartStr) {
         const mdStart = new Date(mdStartStr);
-        setV('md_end', addDays(mdStart, f.settings.md_dur));
+        let mdDur = isSimple ? f.settings.sm_md_dur : f.settings.md_dur;
+        setV('md_end', addDays(mdStart, parseInt(mdDur)));
         setV('pi_check_start', addDays(mdStart, f.settings.pi_check_off || 6));
     }
     const hdStr = document.getElementById('date_heading').value;
     if (hdStr) {
         const hd = new Date(hdStr);
-        const piOff = parseInt(f.settings.pi_off);
-        const f3dOff = parseInt(f.settings.f3d_off);
-        if (f.use_yp && document.getElementById('date_yp').value) setV('pi_flood_start', new Date(document.getElementById('date_yp').value));
-        else setV('pi_flood_start', addDays(hd, -piOff));
-        const piStartStr = document.getElementById('date_pi_flood_start').value;
-        if(piStartStr) setV('pi_flood_end', addDays(new Date(piStartStr), (piOff - f3dOff)));
+        if (!isSimple) {
+            const piOff = parseInt(f.settings.pi_off);
+            const f3dOff = parseInt(f.settings.f3d_off);
+            if (f.use_yp && document.getElementById('date_yp').value) setV('pi_flood_start', new Date(document.getElementById('date_yp').value));
+            else setV('pi_flood_start', addDays(hd, -piOff));
+            
+            const piStartStr = document.getElementById('date_pi_flood_start').value;
+            if(piStartStr) setV('pi_flood_end', addDays(new Date(piStartStr), (piOff - f3dOff)));
+        } else {
+            const piStartStr = document.getElementById('date_pi_flood_start').value;
+            if(piStartStr) setV('pi_flood_end', addDays(new Date(piStartStr), parseInt(f.settings.sm_flood_dur)));
+        }
+        
         const piEndStr = document.getElementById('date_pi_flood_end').value;
         if (piEndStr) setV('f3d1', new Date(piEndStr));
-        else setV('f3d1', addDays(hd, -f3dOff));
+        else if (!isSimple) setV('f3d1', addDays(hd, -parseInt(f.settings.f3d_off)));
+        
         for(let i=2; i<=6; i++) {
             const prevStr = document.getElementById(`date_f3d${i-1}`).value;
             if(prevStr) setV(`f3d${i}`, addDays(new Date(prevStr), 7));
