@@ -2825,6 +2825,9 @@ function toggleFirebaseLogin() {
 function toggleSimplePitan() {
     const isEnabled = document.getElementById('sm_enable_pitan').checked;
     document.getElementById('sm-pitan-settings').style.display = isEnabled ? 'block' : 'none';
+    if (farmers[activeIdx]) {
+        farmers[activeIdx].settings.sm_enable_pitan = isEnabled;
+    }
 }
 
 function toggleGroupIdVisibility() {
