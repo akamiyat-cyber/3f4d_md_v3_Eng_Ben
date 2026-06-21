@@ -2058,7 +2058,7 @@ async function sendTestNotification() {
     if (Notification.permission !== "granted") {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
-            alert("Please allow notifications in your browser settings.");
+            alert("Please allow notifications in your browser settings.\n\n*Note for iPhone/iPad users: Apple requires you to 'Add to Home Screen' first. Tap Share -> Add to Home Screen, open the app from there, and try again.");
             return;
         }
     }
