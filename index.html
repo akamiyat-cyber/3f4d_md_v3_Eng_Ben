@@ -1299,7 +1299,7 @@ async function initApp() {
         checkNotifications(); 
     } catch (e) {
         console.error("DB Error:", e);
-        alert("Database Error. Please reload.");
+        alert("Database Error. Please clear cache and reload. (" + (e.message || e) + ")");
     }
 }
 
@@ -1322,6 +1322,9 @@ function initInputs() {
 function loadActiveFarmer() {
     if(!farmers[activeIdx]) return;
     const f = farmers[activeIdx];
+    if(!f.settings) f.settings = { ...DEFAULT_SETTINGS };
+    if(!f.dates) f.dates = {};
+    if(!f.manualKeys) f.manualKeys = [];
     if(!f.completed) f.completed = [];
     if(!f.memos) f.memos = {};
     if(!f.photos) f.photos = {};
