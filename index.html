@@ -1514,14 +1514,19 @@ function recalculate(triggerId) {
     } else if (isSimple && f.settings.sm_enable_pitan) {
         const smPStart = f.settings.sm_p_start_date;
         if (smPStart) {
-            setV('p_start', new Date(smPStart));
-            let pDur = f.settings.sm_p_dur;
-            setV('p_end', addDays(new Date(smPStart), parseInt(pDur)));
+            document.getElementById('date_p_start').value = smPStart;
+            f.dates['p_start'] = smPStart;
+            let pDur = f.settings.sm_p_dur || 3;
+            const endD = formatDateISO(addDays(new Date(smPStart + "T00:00:00"), parseInt(pDur)));
+            document.getElementById('date_p_end').value = endD;
+            f.dates['p_end'] = endD;
         } else {
-            setV('p_start', "");
-            setV('p_end', "");
+            document.getElementById('date_p_start').value = "";
+            f.dates['p_start'] = "";
+            document.getElementById('date_p_end').value = "";
+            f.dates['p_end'] = "";
         }
-    } else if (tpStr) {
+    } else if (tpStr && !isSimple) {
         let pStartOff = f.settings.p_start_off;
         setV('p_start', addDays(new Date(tpStr), parseInt(pStartOff)));
         const pStartStr = document.getElementById('date_p_start').value;
@@ -1827,9 +1832,27 @@ function openPhotoModal(date) {
 }
 
 function updateFromManual(id) {
+    const f = farmers[activeIdx];
     const el = document.getElementById('date_'+id);
-    if (!farmers[activeIdx].manualKeys.includes(id)) farmers[activeIdx].manualKeys.push(id);
-    farmers[activeIdx].dates[id] = el.value;
+    if (!f.manualKeys.includes(id)) f.manualKeys.push(id);
+    f.dates[id] = el.value;
+
+    if (currentMode === 'simple' && f.settings.sm_enable_pitan) {
+        if (id === 'p_start') {
+            const smEl = document.getElementById('sm_p_start_date');
+            if (smEl) smEl.value = el.value;
+            f.settings.sm_p_start_date = el.value;
+        } else if (id === 'p_end' && el.value && f.settings.sm_p_start_date) {
+            const startD = new Date(f.settings.sm_p_start_date + "T00:00:00");
+            const endD = new Date(el.value + "T00:00:00");
+            const diffTime = endD - startD;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            f.settings.sm_p_dur = diffDays;
+            const durEl = document.getElementById('sm_p_dur');
+            if (durEl) durEl.value = diffDays;
+        }
+    }
+
     saveToLocal(); recalculate(id);
 }
 
