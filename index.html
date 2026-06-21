@@ -1480,12 +1480,19 @@ function recalculate(triggerId) {
     if(!f.autoDates) f.autoDates = {};
     const isSimple = (currentMode === 'simple');
     const setV = (id, date) => { 
-        if(!isNaN(date)) { 
+        if (date === "") {
+            f.autoDates[id] = "";
+            if (!f.manualKeys.includes(id)) { 
+                const el = document.getElementById('date_'+id); 
+                if(el) el.value = ""; 
+                f.dates[id] = ""; 
+            }
+        } else if (date instanceof Date && !isNaN(date)) { 
             const dateStr = formatDateISO(date);
             f.autoDates[id] = dateStr;
             if (!f.manualKeys.includes(id)) { 
                 const el = document.getElementById('date_'+id); 
-                el.value = dateStr; 
+                if(el) el.value = dateStr; 
                 f.dates[id] = dateStr; 
             }
         } 
