@@ -336,8 +336,8 @@
             
 
             <select id="mode-selector" class="form-select form-select-sm" style="width: auto; margin-right: 5px;" onchange="changeMode(this.value)">
-                <option value="professional" id="opt_mode_prof">Professional</option>
                 <option value="simple" id="opt_mode_simple">Simple</option>
+                <option value="professional" id="opt_mode_prof">Professional</option>
             </select>
             <select id="lang-selector" class="form-select form-select-sm" style="width: auto;" onchange="changeLanguage(this.value)">
                 <option value="en">English</option>
@@ -1077,7 +1077,7 @@ const TRANSLATIONS = {
 };
 
 let currentLang = localStorage.getItem('f3d_lang') || 'en';
-let currentMode = localStorage.getItem('f3d_mode') || 'simple';
+let currentMode = 'simple'; // Always default to Simple on app load
 
 function changeMode(mode) {
     currentMode = mode;
