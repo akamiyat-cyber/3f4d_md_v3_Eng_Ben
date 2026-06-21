@@ -565,10 +565,10 @@
                         <div id="sm-pitan-settings" style="display: none;" class="col-12">
                             <div class="row g-2 mt-1 ps-2 border-start border-2 border-primary">
                                 <div class="col-12">
-                                    <label class="small fw-bold" id="lbl-sm-p-start">Pitan start after transplanting (days)</label>
+                                    <label class="small fw-bold" id="lbl-sm-p-start-date">Pitan Start Date</label>
                                     <div class="d-flex align-items-center">
-                                        <input type="number" id="sm_p_start_off" class="form-control form-control-sm" value="25">
-                                        <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_p_start_off', 25)">↺</button>
+                                        <input type="date" id="sm_p_start_date" class="form-control form-control-sm config-date" onchange="recalculate('all')">
+                                        <button class="btn btn-link btn-reset-item text-decoration-none" onclick="document.getElementById('sm_p_start_date').value=''; recalculate('all')">🗑️</button>
                                     </div>
                                 </div>
                                 <div class="col-12">
@@ -902,7 +902,7 @@ const TRANSLATIONS = {
         sm_flood_start: "Flooding start before 3F4D after sowing (around 95–105 days after sowing, or 50–60 days after transplanting)",
         sm_flood_dur: "Flooding duration before 3F4D (usually 4 days).",
         sm_enable_pitan: "Enable Pitan (Optional)",
-        sm_p_start: "Pitan start after transplanting (days)",
+        sm_p_start_date: "Pitan Start Date",
         sm_p_dur: "Pitan duration (days)",
         date_settings: "2. Date Settings (Adjustable)",
         logic_config: "Logic Configuration (Formulas)",
@@ -996,7 +996,7 @@ const TRANSLATIONS = {
         sm_flood_start: "3F4D এর আগে ফ্লাডিং শুরু (বপনের প্রায় ৯৫-১০৫ দিন পর, অথবা রোপণের ৫০-৬০ দিন পর)",
         sm_flood_dur: "3F4D এর আগে ফ্লাডিং সময়কাল (সাধারণত ৪ দিন)।",
         sm_enable_pitan: "পিতান সক্ষম করুন (ঐচ্ছিক)",
-        sm_p_start: "চারা রোপণের পর পিতান শুরু (দিন)",
+        sm_p_start_date: "পিতান শুরুর তারিখ",
         sm_p_dur: "পিতানের সময়কাল (দিন)",
         date_settings: "২. তারিখ সেটিংস (পরিবর্তনযোগ্য)",
         logic_config: "লজিক কনফিগারেশন (সূত্র)",
@@ -1134,7 +1134,7 @@ function changeLanguage(lang) {
         'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps', 'logicModalTitle': 'logic_config',
         'lbl-sm-note': 'sm_note', 'lbl-sm-md-start': 'sm_md_start', 'lbl-sm-md-dur': 'sm_md_dur',
         'lbl-sm-flood-start': 'sm_flood_start', 'lbl-sm-flood-dur': 'sm_flood_dur',
-        'lbl-sm-enable-pitan': 'sm_enable_pitan', 'lbl-sm-p-start': 'sm_p_start', 'lbl-sm-p-dur': 'sm_p_dur',
+        'lbl-sm-enable-pitan': 'sm_enable_pitan', 'lbl-sm-p-start-date': 'sm_p_start_date', 'lbl-sm-p-dur': 'sm_p_dur',
         'opt_mode_prof': 'mode_prof', 'opt_mode_simple': 'mode_simple'
     };
     for(const [id, key] of Object.entries(staticIds)) {
@@ -1336,7 +1336,7 @@ function loadActiveFarmer() {
     if(f.fieldSizeUnit) document.getElementById('prof_size_unit').value = f.fieldSizeUnit;
     document.getElementById('prof_coords').value = f.coordinates || "";
 
-    ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off', 'sm_md_start_off', 'sm_md_dur', 'sm_flood_start_off', 'sm_flood_dur', 'sm_p_start_off', 'sm_p_dur'].forEach(k => {
+    ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off', 'sm_md_start_off', 'sm_md_dur', 'sm_flood_start_off', 'sm_flood_dur', 'sm_p_dur'].forEach(k => {
         if(f.settings[k] === undefined) f.settings[k] = DEFAULT_SETTINGS[k];
         const el = document.getElementById(k);
         if(el) el.value = f.settings[k] || (k === 'pi_check_off' ? 6 : "");
@@ -1346,6 +1346,7 @@ function loadActiveFarmer() {
 
     document.getElementById('use_yp').checked = f.use_yp;
     document.getElementById('sm_enable_pitan').checked = f.settings.sm_enable_pitan === true;
+    document.getElementById('sm_p_start_date').value = f.settings.sm_p_start_date || "";
     toggleSimplePitan();
     document.getElementById('date_yp').disabled = !f.use_yp;
     dateKeys.forEach(k => {
@@ -1467,7 +1468,7 @@ function hideLoading() { document.getElementById('loading-overlay').style.displa
 function recalculate(triggerId) {
     if(!farmers[activeIdx]) return;
     const f = farmers[activeIdx];
-    document.querySelectorAll('.config-panel input[type="number"]').forEach(el => {
+    document.querySelectorAll('.config-panel input[type="number"], .config-panel input.config-date').forEach(el => {
         if(el.id.startsWith('prof_')) return;
         f.settings[el.id] = el.value;
         if (DEFAULT_SETTINGS[el.id] != el.value) el.classList.add('manual-highlight');
@@ -1510,11 +1511,21 @@ function recalculate(triggerId) {
     if (isSimple && !f.settings.sm_enable_pitan) {
         setV('p_start', "");
         setV('p_end', "");
+    } else if (isSimple && f.settings.sm_enable_pitan) {
+        const smPStart = f.settings.sm_p_start_date;
+        if (smPStart) {
+            setV('p_start', new Date(smPStart));
+            let pDur = f.settings.sm_p_dur;
+            setV('p_end', addDays(new Date(smPStart), parseInt(pDur)));
+        } else {
+            setV('p_start', "");
+            setV('p_end', "");
+        }
     } else if (tpStr) {
-        let pStartOff = isSimple ? f.settings.sm_p_start_off : f.settings.p_start_off;
+        let pStartOff = f.settings.p_start_off;
         setV('p_start', addDays(new Date(tpStr), parseInt(pStartOff)));
         const pStartStr = document.getElementById('date_p_start').value;
-        let pDur = isSimple ? f.settings.sm_p_dur : f.settings.p_dur;
+        let pDur = f.settings.p_dur;
         if(pStartStr) setV('p_end', addDays(new Date(pStartStr), parseInt(pDur)));
     }
     const mdStartStr = document.getElementById('date_md_start').value;
@@ -2661,7 +2672,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     calendar.render(); 
     document.getElementById('cal-tab').addEventListener('shown.bs.tab', () => { if (calendar) { calendar.updateSize(); calendar.render(); } });
-    document.querySelectorAll('.config-panel input[type="number"]').forEach(el => { if(!el.id.startsWith('prof_')) el.onchange = () => recalculate('all'); });
+    document.querySelectorAll('.config-panel input[type="number"], .config-panel input.config-date').forEach(el => { if(!el.id.startsWith('prof_')) el.onchange = () => recalculate('all'); });
 });
 
 /* --- Weather API (Open-Meteo) --- */
