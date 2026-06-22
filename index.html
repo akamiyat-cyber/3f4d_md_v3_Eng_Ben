@@ -1529,7 +1529,11 @@ function recalculate(triggerId) {
         setV('heading', addDays(actualTp, f.settings.hd_das - 40));
         
         if (isSimple) {
-            setV('pi_flood_start', addDays(actualTp, parseInt(f.settings.sm_flood_start_tp_off)));
+            if (f.use_yp && document.getElementById('date_yp').value) {
+                setV('pi_flood_start', new Date(document.getElementById('date_yp').value));
+            } else {
+                setV('pi_flood_start', addDays(actualTp, parseInt(f.settings.sm_flood_start_tp_off)));
+            }
         }
     }
     if (isSimple && !f.settings.sm_enable_pitan) {
