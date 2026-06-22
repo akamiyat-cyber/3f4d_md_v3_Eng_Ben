@@ -543,10 +543,17 @@
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold" id="lbl-sm-flood-start">Flooding start before 3F4D after sowing (around 95–105 days after sowing, or 50–60 days after transplanting)</label>
+                            <label class="small fw-bold" id="lbl-sm-flood-start">Starting of 4-days flooding before 3F4D after sowing (around 95–105 days after sowing)</label>
                             <div class="d-flex align-items-center">
                                 <input type="number" id="sm_flood_start_off" class="form-control form-control-sm" value="95">
                                 <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_off', 95)">↺</button>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <label class="small fw-bold" id="lbl-sm-flood-start-tp">Starting of 4-days flooding before 3F4D after transplanting (around 50–60 days after transplanting)</label>
+                            <div class="d-flex align-items-center">
+                                <input type="number" id="sm_flood_start_tp_off" class="form-control form-control-sm" value="50">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_tp_off', 50)">↺</button>
                             </div>
                         </div>
                         <div class="col-12">
@@ -873,7 +880,7 @@ db.version(1).stores({
 const DEFAULT_SETTINGS = { 
     p_dur: 3, md_dur: 8, pi_check_off: 6, hd_das: 119, pi_off: 25, f3d_off: 21, hv_off: 28,
     p_start_off: 25, md_start_off: 80,
-    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 95, sm_flood_dur: 4
+    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 95, sm_flood_start_tp_off: 50, sm_flood_dur: 4
 };
 
 // Conversion Rates (Base: ha)
@@ -1339,7 +1346,7 @@ function loadActiveFarmer() {
     if(f.fieldSizeUnit) document.getElementById('prof_size_unit').value = f.fieldSizeUnit;
     document.getElementById('prof_coords').value = f.coordinates || "";
 
-    ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off', 'sm_md_start_off', 'sm_md_dur', 'sm_flood_start_off', 'sm_flood_dur', 'sm_p_dur'].forEach(k => {
+    ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off', 'sm_md_start_off', 'sm_md_dur', 'sm_flood_start_off', 'sm_flood_start_tp_off', 'sm_flood_dur', 'sm_p_dur'].forEach(k => {
         if(f.settings[k] === undefined) f.settings[k] = DEFAULT_SETTINGS[k];
         const el = document.getElementById(k);
         if(el) el.value = f.settings[k] || (k === 'pi_check_off' ? 6 : "");
@@ -1509,15 +1516,20 @@ function recalculate(triggerId) {
     const sowing = sowingStr ? new Date(sowingStr) : null;
     if (sowing) {
         setV('tp', addDays(sowing, 40));
+    }
+    
+    const tpStr = document.getElementById('date_tp').value;
+    const actualTp = tpStr ? new Date(tpStr) : null;
+
+    if (actualTp) {
         let mdOff = isSimple ? f.settings.sm_md_start_off : f.settings.md_start_off;
-        setV('md_start', addDays(sowing, parseInt(mdOff)));
-        setV('heading', addDays(sowing, f.settings.hd_das));
+        setV('md_start', addDays(actualTp, parseInt(mdOff) - 40));
+        setV('heading', addDays(actualTp, f.settings.hd_das - 40));
         
         if (isSimple) {
-            setV('pi_flood_start', addDays(sowing, parseInt(f.settings.sm_flood_start_off)));
+            setV('pi_flood_start', addDays(actualTp, parseInt(f.settings.sm_flood_start_tp_off)));
         }
     }
-    const tpStr = document.getElementById('date_tp').value;
     if (isSimple && !f.settings.sm_enable_pitan) {
         setV('p_start', "");
         setV('p_end', "");
@@ -1716,7 +1728,14 @@ function refreshViews() {
 }
 
 function addDays(d, n) { const res = new Date(d); res.setDate(res.getDate() + parseInt(n)); return res; }
-function resetSetting(id, defaultVal) { document.getElementById(id).value = defaultVal; recalculate('all'); }
+function resetSetting(id, defaultVal) { 
+    const el = document.getElementById(id);
+    if(el) {
+        el.value = defaultVal; 
+        el.dispatchEvent(new Event('input'));
+    }
+    recalculate('all'); 
+}
 
 function handleDateClick(info) {
     const f = farmers[activeIdx];
@@ -2706,6 +2725,15 @@ document.addEventListener('DOMContentLoaded', () => {
     calendar.render(); 
     document.getElementById('cal-tab').addEventListener('shown.bs.tab', () => { if (calendar) { calendar.updateSize(); calendar.render(); } });
     document.querySelectorAll('.config-panel input[type="number"], .config-panel input.config-date').forEach(el => { if(!el.id.startsWith('prof_')) el.onchange = () => recalculate('all'); });
+    
+    document.getElementById('sm_flood_start_off').addEventListener('input', function() {
+        const other = document.getElementById('sm_flood_start_tp_off');
+        if(other) other.value = parseInt(this.value || 0) - 45;
+    });
+    document.getElementById('sm_flood_start_tp_off').addEventListener('input', function() {
+        const other = document.getElementById('sm_flood_start_off');
+        if(other) other.value = parseInt(this.value || 0) + 45;
+    });
 });
 
 /* --- Weather API (Open-Meteo) --- */
