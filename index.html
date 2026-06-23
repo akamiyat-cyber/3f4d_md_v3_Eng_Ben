@@ -543,17 +543,17 @@
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="small fw-bold" id="lbl-sm-flood-start">Days from sowing to start flooding before 3F4D (around 95–105 days after sowing)</label>
+                            <label class="small fw-bold" id="lbl-sm-flood-start">Days from sowing to start flooding before 3F4D (around 99–109 days after sowing)</label>
                             <div class="d-flex align-items-center">
-                                <input type="number" id="sm_flood_start_off" class="form-control form-control-sm" value="95">
-                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_off', 95)">↺</button>
+                                <input type="number" id="sm_flood_start_off" class="form-control form-control-sm" value="99">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_off', 99)">↺</button>
                             </div>
                         </div>
                         <div class="col-12 mt-2">
-                            <label class="small fw-bold" id="lbl-sm-flood-start-tp">Days from transplanting to start flooding before 3F4D (around 50–60 days after transplanting)</label>
+                            <label class="small fw-bold" id="lbl-sm-flood-start-tp">Days from transplanting to start flooding before 3F4D (around 54–64 days after transplanting)</label>
                             <div class="d-flex align-items-center">
-                                <input type="number" id="sm_flood_start_tp_off" class="form-control form-control-sm" value="50">
-                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_tp_off', 50)">↺</button>
+                                <input type="number" id="sm_flood_start_tp_off" class="form-control form-control-sm" value="54">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_tp_off', 54)">↺</button>
                             </div>
                         </div>
                         <div class="col-12">
@@ -880,7 +880,7 @@ db.version(1).stores({
 const DEFAULT_SETTINGS = { 
     p_dur: 3, md_dur: 8, pi_check_off: 6, hd_das: 119, pi_off: 25, f3d_off: 21, hv_off: 28,
     p_start_off: 25, md_start_off: 80,
-    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 95, sm_flood_start_tp_off: 50, sm_flood_dur: 4
+    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 99, sm_flood_start_tp_off: 54, sm_flood_dur: 4
 };
 
 // Conversion Rates (Base: ha)
@@ -906,8 +906,8 @@ const TRANSLATIONS = {
         sm_note: "Note: For yield improvement, it is preferable to initiate MD when the average number of tillers (tillers with at least two leaves) of representative plants in the field exceeds 10 for Rod miniket and 11 for BRRI dhan50, representing 80% of the ideal panicle number.",
         sm_md_start: "MD start after sowing seed (35–40 days after transplanting)",
         sm_md_dur: "MD duration",
-        sm_flood_start: "Days from sowing to start flooding before 3F4D (around 95–105 days after sowing)",
-        sm_flood_start_tp: "Days from transplanting to start flooding before 3F4D (around 50–60 days after transplanting)",
+        sm_flood_start: "Days from sowing to start flooding before 3F4D (around 99–109 days after sowing)",
+        sm_flood_start_tp: "Days from transplanting to start flooding before 3F4D (around 54–64 days after transplanting)",
         sm_flood_dur: "Flooding duration before 3F4D (usually 4 days).",
         sm_enable_pitan: "Enable Pitan (Optional)",
         sm_p_start_date: "Pitan Start Date",
@@ -1001,8 +1001,8 @@ const TRANSLATIONS = {
         sm_note: "বিঃদ্রঃ ফলন বৃদ্ধির জন্য, মাঠের প্রতিনিধি গাছের গড় কুশির সংখ্যা (কমপক্ষে দুটি পাতাসহ) রড মিনিকেটের জন্য ১০ এবং ব্রি ধান৫০-এর জন্য ১১ অতিক্রম করলে (যা আদর্শ প্যানিকেল সংখ্যার ৮০%) MD শুরু করা ভালো।",
         sm_md_start: "বীজ বপনের পর MD শুরু (চারা রোপণের ৩৫-৪০ দিন পর)",
         sm_md_dur: "MD সময়কাল",
-        sm_flood_start: "বীজ বপনের পর থেকে 3F4D এর আগে ফ্লাডিং শুরুর দিন (প্রায় ৯৫-১০৫ দিন পর)",
-        sm_flood_start_tp: "চারা রোপণের পর থেকে 3F4D এর আগে ফ্লাডিং শুরুর দিন (প্রায় ৫০-৬০ দিন পর)",
+        sm_flood_start: "বীজ বপনের পর থেকে 3F4D এর আগে ফ্লাডিং শুরুর দিন (প্রায় ৯৯-১০৯ দিন পর)",
+        sm_flood_start_tp: "চারা রোপণের পর থেকে 3F4D এর আগে ফ্লাডিং শুরুর দিন (প্রায় ৫৪-৬৪ দিন পর)",
         sm_flood_dur: "3F4D এর আগে ফ্লাডিং সময়কাল (সাধারণত ৪ দিন)।",
         sm_enable_pitan: "পিতান সক্ষম করুন (ঐচ্ছিক)",
         sm_p_start_date: "পিতান শুরুর তারিখ",
