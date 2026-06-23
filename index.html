@@ -1532,7 +1532,11 @@ function recalculate(triggerId) {
             if (f.use_yp && document.getElementById('date_yp').value) {
                 setV('pi_flood_start', new Date(document.getElementById('date_yp').value));
             } else {
-                setV('pi_flood_start', addDays(actualTp, parseInt(f.settings.sm_flood_start_tp_off)));
+                if (f.settings.sm_flood_basis === 'sowing' && sowing) {
+                    setV('pi_flood_start', addDays(sowing, parseInt(f.settings.sm_flood_start_off)));
+                } else {
+                    setV('pi_flood_start', addDays(actualTp, parseInt(f.settings.sm_flood_start_tp_off)));
+                }
             }
         }
     }
@@ -2733,12 +2737,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.config-panel input[type="number"], .config-panel input.config-date').forEach(el => { if(!el.id.startsWith('prof_')) el.onchange = () => recalculate('all'); });
     
     document.getElementById('sm_flood_start_off').addEventListener('input', function() {
-        const other = document.getElementById('sm_flood_start_tp_off');
-        if(other) other.value = parseInt(this.value || 0) - 45;
+        if(farmers[activeIdx]) farmers[activeIdx].settings.sm_flood_basis = 'sowing';
     });
     document.getElementById('sm_flood_start_tp_off').addEventListener('input', function() {
-        const other = document.getElementById('sm_flood_start_off');
-        if(other) other.value = parseInt(this.value || 0) + 45;
+        if(farmers[activeIdx]) farmers[activeIdx].settings.sm_flood_basis = 'tp';
     });
 });
 
