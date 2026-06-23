@@ -1747,7 +1747,7 @@ function addDays(d, n) { const res = new Date(d); res.setDate(res.getDate() + pa
 function unlockAdminSync(e) {
     e.stopPropagation();
     const pwd = prompt("Enter Admin Password:");
-    if (pwd === "admin") {
+    if (pwd === "sanrice") {
         document.getElementById('admin-sync-container').style.display = 'block';
         document.getElementById('admin-sync-unlock-btn').style.display = 'none';
     } else if (pwd !== null) {
