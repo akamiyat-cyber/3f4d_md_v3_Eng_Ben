@@ -1152,6 +1152,10 @@ function changeMode(mode) {
         simpleSettingsCard.style.display = (mode === 'simple') ? 'block' : 'none';
     }
     
+    document.querySelectorAll('.prof-only').forEach(el => {
+        el.style.display = (mode === 'prof') ? '' : 'none';
+    });
+    
     recalculate('all');
 }
 
