@@ -1658,6 +1658,20 @@ function formatDateISO(d) {
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// ユーザー入力（農家名・村名・メモ等）を innerHTML に埋め込む前に必ず通すこと。
+// グループ同期で他端末から届いた文字列も信頼できないため、表示時に無害化する。
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+}
+
+// 日付キーは onclick 属性等の JS 文脈にも埋め込まれるため、
+// エスケープではなく形式検証で防御する（YYYY-MM-DD 以外は不正データとして扱う）。
+function isValidDateKey(s) {
+    return /^\d{4}-\d{2}-\d{2}$/.test(s);
+}
+
 function refreshViews() {
     if(!farmers[activeIdx]) return;
     const f = farmers[activeIdx];
@@ -1668,6 +1682,7 @@ function refreshViews() {
     log.innerHTML = "";
     const noteDates = new Set([...Object.keys(f.memos || {}), ...Object.keys(f.photos || {}), ...Object.keys(f.irrigation || {})]);
     Array.from(noteDates).sort().reverse().forEach(date => {
+        if (!isValidDateKey(date)) return;
         const hasMemo = f.memos && f.memos[date];
         const hasPhoto = f.photos && f.photos[date];
         const irr = f.irrigation && f.irrigation[date];
@@ -1677,13 +1692,13 @@ function refreshViews() {
         let content = `<div class="memo-list-item"><strong>${date}:</strong><br>`;
         if(irr) {
             const unitLabel = irr.unit === 'min' ? t('unit_min') : t('unit_hr');
-            content += `<span class="badge bg-info text-dark">${t('lbl_log_irr')}: ${irr.value} ${unitLabel}</span><br>`;
+            content += `<span class="badge bg-info text-dark">${t('lbl_log_irr')}: ${escapeHtml(irr.value)} ${unitLabel}</span><br>`;
         }
-        if(hasMemo) content += `<span>${f.memos[date]}</span><br>`;
+        if(hasMemo) content += `<span>${escapeHtml(f.memos[date])}</span><br>`;
         if(hasPhoto) {
             const photoArray = Array.isArray(f.photos[date]) ? f.photos[date] : [f.photos[date]];
             photoArray.forEach(pData => {
-                content += `<img src="${pData}" class="memo-img-preview" onclick="openPhotoModal('${date}')">`;
+                content += `<img src="${escapeHtml(pData)}" class="memo-img-preview" onclick="openPhotoModal('${date}')">`;
             });
         }
         content += `</div>`;
@@ -1952,8 +1967,8 @@ function renderNav() {
 
     if (todayTasks.length > 0) {
         summaryArea.style.display = "block";
-        summaryList.innerHTML = "📅 " + (currentLang === 'bn' ? "আজকের কাজ: " : "Today's Tasks: ") + 
-            todayTasks.map(x => `[${x.village}] ${x.name}: ${x.jobs.join(', ')}`).join(" | ");
+        summaryList.innerHTML = "📅 " + (currentLang === 'bn' ? "আজকের কাজ: " : "Today's Tasks: ") +
+            todayTasks.map(x => `[${escapeHtml(x.village)}] ${escapeHtml(x.name)}: ${escapeHtml(x.jobs.join(', '))}`).join(" | ");
     }
 
     // --- Village Nav ---
@@ -2064,11 +2079,12 @@ function createFarmerInVillage(villageName, farmerName) {
         dates: {}, manualKeys: [], use_yp: false, memos: {}, photos: {}, completed: [], autoDates: {},
         variety: "", fieldSize: "", fieldSizeUnit: "ha", coordinates: "", irrigation: {}
     };
-    farmers.unshift(newFarmer); 
-    db.farmers.put(newFarmer); 
-    activeIdx = 0; 
+    farmers.unshift(newFarmer);
+    db.farmers.put(newFarmer);
+    if (typeof syncFarmerToFirestore === 'function') syncFarmerToFirestore(newFarmer);
+    activeIdx = 0;
     activeVillage = villageName || "Unassigned";
-    renderNav(); 
+    renderNav();
     loadActiveFarmer();
 }
 
@@ -2080,6 +2096,7 @@ async function deleteVillage() {
         const targets = farmers.filter(f => (f.village || "Unassigned") === targetVillage);
         const targetIds = targets.map(f => f.id);
         await db.farmers.bulkDelete(targetIds);
+        targetIds.forEach(id => { if (typeof deleteFarmerFromFirestore === 'function') deleteFarmerFromFirestore(id); });
         farmers = farmers.filter(f => !targetIds.includes(f.id));
         activeIdx = 0;
         activeVillage = null; 
@@ -2140,7 +2157,9 @@ function renameFarmer() {
 async function deleteFarmer() {
     if(farmers.length <= 1) { alert("Cannot delete the only farmer. Create another one first."); return; }
     if(confirm(`Are you sure you want to delete "${farmers[activeIdx].name}"?`)) {
-        await db.farmers.delete(farmers[activeIdx].id);
+        const deletedId = farmers[activeIdx].id;
+        await db.farmers.delete(deletedId);
+        if (typeof deleteFarmerFromFirestore === 'function') deleteFarmerFromFirestore(deletedId);
         farmers.splice(activeIdx, 1);
         activeIdx = 0;
         renderNav();
@@ -2569,14 +2588,14 @@ function showAllSchedules() {
         const row = `
             <tr ${rowId} class="${highlightClass}">
                 <td style="white-space:nowrap;">
-                    <strong>${isToday ? '★ ' : ''}${e.date}</strong><br>
+                    <strong>${isToday ? '★ ' : ''}${escapeHtml(e.date)}</strong><br>
                     <small class="text-muted">${benDate}</small>
                 </td>
                 <td>
-                    <a href="#" class="text-decoration-none fw-bold text-primary" onclick="switchToFarmer(${e.farmerIdx}); return false;">
-                        ${e.farmer}
+                    <a href="#" class="text-decoration-none fw-bold text-primary" onclick="switchToFarmer(${parseInt(e.farmerIdx)}); return false;">
+                        ${escapeHtml(e.farmer)}
                     </a>
-                    <br><small class="text-muted">${e.village}</small>
+                    <br><small class="text-muted">${escapeHtml(e.village)}</small>
                 </td>
                 <td>${e.eventName}</td>
                 <td>${statusBadge}</td>
@@ -2649,9 +2668,9 @@ function openGallery() {
                     const item = document.createElement('div');
                     item.className = 'gallery-item';
                     item.innerHTML = `
-                        <img src="${pData}" onclick="openPhotoFull(this.src)">
-                        <div class="gallery-info fw-bold">${f.name}</div>
-                        <div class="gallery-info">${date}</div>
+                        <img src="${escapeHtml(pData)}" onclick="openPhotoFull(this.src)">
+                        <div class="gallery-info fw-bold">${escapeHtml(f.name)}</div>
+                        <div class="gallery-info">${escapeHtml(date)}</div>
                     `;
                     container.appendChild(item);
                     photoCount++;
@@ -2668,7 +2687,11 @@ function openGallery() {
 
 function openPhotoFull(src) {
     const win = window.open("", "_blank");
-    win.document.write(`<img src="${src}" style="width:100%">`);
+    if (!win) return;
+    const img = win.document.createElement('img');
+    img.src = src;
+    img.style.width = '100%';
+    win.document.body.appendChild(img);
 }
 
 async function downloadVillageGallery() {
@@ -2897,40 +2920,107 @@ function reconnectSync() {
     if (auth && auth.currentUser) startFirestoreSync();
 }
 
-function startFirestoreSync() {
-    if (!fsDb || !auth.currentUser) return;
+// 同期設計:
+// - 農家ごとに groups/{docId}/farmers/{farmerId} の個別ドキュメントに保存する。
+//   （全農家を1ドキュメントに入れる旧方式は、Firestoreの1MiB上限と
+//     last-write-wins の相互上書きの両方で破綻するため廃止）
+// - 写真(base64)はサイズが大きいため同期対象外。各端末のIndexedDBにのみ残る。
+// - 自端末の書き込みエコーは metadata.hasPendingWrites で除外する。
+
+function getSyncDocId() {
     const groupIdInput = document.getElementById('firebase-group-id').value.trim();
-    const docId = groupIdInput ? 'group_' + groupIdInput : auth.currentUser.uid;
-    const docRef = fsDb.collection('groups').doc(docId);
-    
-    dbUnsubscribe = docRef.onSnapshot(doc => {
-        if (doc.exists) {
-            const data = doc.data();
-            const localTimestamp = localStorage.getItem('last_sync_time') || 0;
-            // Add buffer to prevent feedback loop
-            if (data.timestamp > parseInt(localTimestamp) + 1000 && data.farmers) {
-                farmers = data.farmers;
-                localStorage.setItem('last_sync_time', data.timestamp);
-                db.farmers.bulkPut(farmers); // Update Dexie
+    return groupIdInput ? 'group_' + groupIdInput : auth.currentUser.uid;
+}
+
+function getSyncFarmersRef() {
+    return fsDb.collection('groups').doc(getSyncDocId()).collection('farmers');
+}
+
+// 旧形式（groups/{docId} 直下に farmers 配列）からの一回限りの移行。
+// サブコレクションが空で、旧ドキュメントに配列が残っている場合のみ実行する。
+async function migrateLegacyGroupDoc() {
+    const colRef = getSyncFarmersRef();
+    const existing = await colRef.limit(1).get();
+    if (!existing.empty) return;
+    const legacy = await fsDb.collection('groups').doc(getSyncDocId()).get();
+    const data = legacy.exists ? legacy.data() : null;
+    if (!data || !Array.isArray(data.farmers)) return;
+    const batch = fsDb.batch();
+    data.farmers.forEach(f => {
+        if (!f || f.id == null) return;
+        const { photos, ...rest } = f;
+        rest.updatedAt = data.timestamp || Date.now();
+        batch.set(colRef.doc(String(f.id)), JSON.parse(JSON.stringify(rest)));
+    });
+    await batch.commit();
+}
+
+async function startFirestoreSync() {
+    if (!fsDb || !auth.currentUser) return;
+    try {
+        await migrateLegacyGroupDoc();
+    } catch (e) {
+        console.error("Legacy sync migration failed:", e);
+    }
+    dbUnsubscribe = getSyncFarmersRef().onSnapshot(snapshot => {
+        let changed = false;
+        snapshot.docChanges().forEach(change => {
+            if (change.doc.metadata.hasPendingWrites) return; // 自端末の書き込みエコー
+            if (change.type === 'removed') {
+                const idx = farmers.findIndex(f => String(f.id) === change.doc.id);
+                if (idx >= 0 && farmers.length > 1) {
+                    db.farmers.delete(farmers[idx].id);
+                    farmers.splice(idx, 1);
+                    if (activeIdx >= farmers.length) activeIdx = 0;
+                    changed = true;
+                }
+                return;
+            }
+            const remote = change.doc.data();
+            if (!remote || remote.id == null) return;
+            const idx = farmers.findIndex(f => String(f.id) === change.doc.id);
+            if (idx >= 0) {
+                // ローカルの方が新しい（オフライン編集後の初回接続など）場合は
+                // 取り込まず、ローカル版をリモートに押し返す
+                if (farmers[idx].updatedAt && remote.updatedAt && farmers[idx].updatedAt > remote.updatedAt) {
+                    syncFarmerToFirestore(farmers[idx]);
+                    return;
+                }
+                remote.photos = farmers[idx].photos || {}; // 写真はローカル保持
+                farmers[idx] = remote;
+            } else {
+                remote.photos = {};
+                farmers.push(remote);
+            }
+            changed = true;
+        });
+        if (changed) {
+            db.farmers.bulkPut(farmers).then(() => {
                 renderNav();
                 loadActiveFarmer();
-            }
+            });
         }
     });
 }
 
+function syncFarmerToFirestore(f) {
+    if (!(auth && auth.currentUser && fsDb) || !f || f.id == null) return;
+    f.updatedAt = Date.now();
+    const { photos, ...rest } = f;
+    // JSON往復で undefined を除去（Firestore は undefined を拒否する）
+    const payload = JSON.parse(JSON.stringify(rest));
+    getSyncFarmersRef().doc(String(f.id)).set(payload)
+        .catch(err => console.error("Sync failed", err));
+}
+
+function deleteFarmerFromFirestore(id) {
+    if (!(auth && auth.currentUser && fsDb) || id == null) return;
+    getSyncFarmersRef().doc(String(id)).delete()
+        .catch(err => console.error("Remote delete failed", err));
+}
+
 function syncToFirestore() {
-    if (auth && auth.currentUser && fsDb) {
-        const now = Date.now();
-        localStorage.setItem('last_sync_time', now);
-        const groupIdInput = document.getElementById('firebase-group-id').value.trim();
-        const docId = groupIdInput ? 'group_' + groupIdInput : auth.currentUser.uid;
-        
-        fsDb.collection('groups').doc(docId).set({
-            farmers: farmers,
-            timestamp: now
-        }, { merge: true }).catch(err => console.error("Sync failed", err));
-    }
+    if (farmers[activeIdx]) syncFarmerToFirestore(farmers[activeIdx]);
 }
 </script>
 
