@@ -568,6 +568,13 @@
                                 <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_dur', 4)">↺</button>
                             </div>
                         </div>
+                        <div class="col-12">
+                            <label class="small fw-bold" id="lbl-sm-hd-das">Heading day after sowing</label>
+                            <div class="d-flex align-items-center">
+                                <input type="number" id="sm_hd_das" class="form-control form-control-sm" value="119">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_hd_das', 119)">↺</button>
+                            </div>
+                        </div>
                         <div class="col-12 mt-2 border-top pt-2">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="sm_enable_pitan" onchange="toggleSimplePitan(); recalculate()">
@@ -885,7 +892,7 @@ db.version(1).stores({
 const DEFAULT_SETTINGS = { 
     p_dur: 3, md_dur: 8, pi_check_off: 6, hd_das: 119, pi_off: 25, f3d_off: 21, hv_off: 28,
     p_start_off: 25, md_start_off: 80,
-    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 95, sm_flood_start_tp_off: 50, sm_flood_dur: 4
+    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 95, sm_flood_start_tp_off: 50, sm_flood_dur: 4, sm_hd_das: 119
 };
 
 // Conversion Rates (Base: ha)
@@ -914,6 +921,7 @@ const TRANSLATIONS = {
         sm_flood_start: "Starting of 4-days flooding before 3F4D after sowing (around 95–105 days after sowing)",
         sm_flood_start_tp: "Starting of 4-days flooding before 3F4D after transplanting (around 50–60 days after sowing)",
         sm_flood_dur: "Flooding duration before 3F4D (usually 4 days).",
+        sm_hd_das: "Heading day after sowing",
         sm_enable_pitan: "Enable Pitan (Optional)",
         sm_p_start_date: "Pitan Start Date",
         sm_p_dur: "Pitan duration (days)",
@@ -1009,6 +1017,7 @@ const TRANSLATIONS = {
         sm_flood_start: "বীজ বপনের পর থেকে 3F4D এর আগে ফ্লাডিং শুরুর দিন (প্রায় ৯৫-১০৫ দিন পর)",
         sm_flood_start_tp: "চারা রোপণের পর থেকে 3F4D এর আগে ফ্লাডিং শুরুর দিন (প্রায় ৫০-৬০ দিন পর)",
         sm_flood_dur: "3F4D এর আগে ফ্লাডিং সময়কাল (সাধারণত ৪ দিন)।",
+        sm_hd_das: "বীজ বপনের পর শীষ আসার দিন",
         sm_enable_pitan: "পিতান সক্ষম করুন (ঐচ্ছিক)",
         sm_p_start_date: "পিতান শুরুর তারিখ",
         sm_p_dur: "পিতানের সময়কাল (দিন)",
@@ -1148,6 +1157,7 @@ function changeLanguage(lang) {
         'hdr-profile': 'lbl_profile', 'btn-gps': 'btn_gps', 'logicModalTitle': 'logic_config',
         'lbl-sm-note': 'sm_note', 'lbl-sm-md-start': 'sm_md_start', 'lbl-sm-md-dur': 'sm_md_dur',
         'lbl-sm-flood-start': 'sm_flood_start', 'lbl-sm-flood-start-tp': 'sm_flood_start_tp', 'lbl-sm-flood-dur': 'sm_flood_dur',
+        'lbl-sm-hd-das': 'sm_hd_das',
         'lbl-sm-enable-pitan': 'sm_enable_pitan', 'lbl-sm-p-start-date': 'sm_p_start_date', 'lbl-sm-p-dur': 'sm_p_dur',
         'opt_mode_prof': 'mode_prof', 'opt_mode_simple': 'mode_simple'
     };
@@ -1353,7 +1363,7 @@ function loadActiveFarmer() {
     if(f.fieldSizeUnit) document.getElementById('prof_size_unit').value = f.fieldSizeUnit;
     document.getElementById('prof_coords').value = f.coordinates || "";
 
-    ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off', 'sm_md_start_off', 'sm_md_dur', 'sm_flood_start_off', 'sm_flood_start_tp_off', 'sm_flood_dur', 'sm_p_dur'].forEach(k => {
+    ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off', 'sm_md_start_off', 'sm_md_dur', 'sm_flood_start_off', 'sm_flood_start_tp_off', 'sm_flood_dur', 'sm_hd_das', 'sm_p_dur'].forEach(k => {
         if(f.settings[k] === undefined) f.settings[k] = DEFAULT_SETTINGS[k];
         const el = document.getElementById(k);
         if(el) el.value = f.settings[k] || (k === 'pi_check_off' ? 6 : "");
@@ -1512,7 +1522,10 @@ function recalculate(triggerId) {
         } 
     };
     if (!document.getElementById('date_sowing').value) {
-        if (document.getElementById('date_heading').value) setV('sowing', addDays(new Date(document.getElementById('date_heading').value), -parseInt(f.settings.hd_das)));
+        if (document.getElementById('date_heading').value) {
+            let hdDas = isSimple ? f.settings.sm_hd_das : f.settings.hd_das;
+            setV('sowing', addDays(new Date(document.getElementById('date_heading').value), -parseInt(hdDas)));
+        }
         else if (document.getElementById('date_tp').value) setV('sowing', addDays(new Date(document.getElementById('date_tp').value), -40));
         else if (document.getElementById('date_md_start').value) {
             let mdOff = isSimple ? f.settings.sm_md_start_off : f.settings.md_start_off;
@@ -1530,8 +1543,9 @@ function recalculate(triggerId) {
 
     if (actualTp) {
         let mdOff = isSimple ? f.settings.sm_md_start_off : f.settings.md_start_off;
+        let hdDas = isSimple ? f.settings.sm_hd_das : f.settings.hd_das;
         setV('md_start', addDays(actualTp, parseInt(mdOff) - 40));
-        setV('heading', addDays(actualTp, f.settings.hd_das - 40));
+        setV('heading', addDays(actualTp, parseInt(hdDas) - 40));
         
         if (isSimple) {
             if (f.use_yp && document.getElementById('date_yp').value) {
