@@ -550,15 +550,15 @@
                         <div class="col-12">
                             <label class="small fw-bold" id="lbl-sm-flood-start">Starting of 4-days flooding before 3F4D after sowing (around 95–105 days after sowing)</label>
                             <div class="d-flex align-items-center">
-                                <input type="number" id="sm_flood_start_off" class="form-control form-control-sm" value="95">
-                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_off', 95)">↺</button>
+                                <input type="number" id="sm_flood_start_off" class="form-control form-control-sm" value="105">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_off', 105)">↺</button>
                             </div>
                         </div>
                         <div class="col-12 mt-2">
                             <label class="small fw-bold" id="lbl-sm-flood-start-tp">Starting of 4-days flooding before 3F4D after transplanting (around 50–60 days after sowing)</label>
                             <div class="d-flex align-items-center">
-                                <input type="number" id="sm_flood_start_tp_off" class="form-control form-control-sm" value="50">
-                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_tp_off', 50)">↺</button>
+                                <input type="number" id="sm_flood_start_tp_off" class="form-control form-control-sm" value="60">
+                                <button class="btn btn-link btn-reset-item text-decoration-none" onclick="resetSetting('sm_flood_start_tp_off', 60)">↺</button>
                             </div>
                         </div>
                         <div class="col-12">
@@ -892,7 +892,7 @@ db.version(1).stores({
 const DEFAULT_SETTINGS = { 
     p_dur: 3, md_dur: 8, pi_check_off: 6, hd_das: 120, pi_off: 25, f3d_off: 21, hv_off: 28,
     p_start_off: 25, md_start_off: 80,
-    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 95, sm_flood_start_tp_off: 50, sm_flood_dur: 4, sm_hd_das: 120
+    sm_md_start_off: 80, sm_md_dur: 8, sm_flood_start_off: 105, sm_flood_start_tp_off: 60, sm_flood_dur: 4, sm_hd_das: 120
 };
 
 // Conversion Rates (Base: ha)
@@ -1497,6 +1497,29 @@ function recalculate(triggerId) {
     const f = farmers[activeIdx];
     document.querySelectorAll('.config-panel input[type="number"], .config-panel input.config-date').forEach(el => {
         if(el.id.startsWith('prof_')) return;
+        
+        if (el.id === 'sm_hd_das' && f.settings.sm_hd_das !== undefined) {
+            const oldVal = parseInt(f.settings.sm_hd_das);
+            const newVal = parseInt(el.value);
+            if (!isNaN(oldVal) && !isNaN(newVal) && oldVal !== newVal) {
+                const diff = newVal - oldVal;
+                const tpEl = document.getElementById('sm_flood_start_tp_off');
+                const sowEl = document.getElementById('sm_flood_start_off');
+                if (tpEl) { 
+                    tpEl.value = parseInt(tpEl.value) + diff; 
+                    f.settings.sm_flood_start_tp_off = tpEl.value; 
+                    if (DEFAULT_SETTINGS['sm_flood_start_tp_off'] != tpEl.value) tpEl.classList.add('manual-highlight');
+                    else tpEl.classList.remove('manual-highlight');
+                }
+                if (sowEl) { 
+                    sowEl.value = parseInt(sowEl.value) + diff; 
+                    f.settings.sm_flood_start_off = sowEl.value; 
+                    if (DEFAULT_SETTINGS['sm_flood_start_off'] != sowEl.value) sowEl.classList.add('manual-highlight');
+                    else sowEl.classList.remove('manual-highlight');
+                }
+            }
+        }
+        
         f.settings[el.id] = el.value;
         if (DEFAULT_SETTINGS[el.id] != el.value) el.classList.add('manual-highlight');
         else el.classList.remove('manual-highlight');
