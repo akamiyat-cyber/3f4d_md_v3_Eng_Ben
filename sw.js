@@ -1,5 +1,6 @@
 // キャッシュの名前（バージョン管理用）
-const CACHE_NAME = 'f3d-pro-scheduler-v1';
+// 注意: index.html を更新して配布するときは、このバージョン番号も上げること
+const CACHE_NAME = 'f3d-pro-scheduler-v2';
 
 // オフラインで利用可能にするファイルのリスト
 const ASSETS_TO_CACHE = [
@@ -42,11 +43,39 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. フェッチ：ネットがない場合はキャッシュから返す
+// 3. フェッチ：
+//    - ページ本体（HTMLナビゲーション）はネットワーク優先。
+//      これにより、公開した更新が既存ユーザーの端末に確実に届く。
+//      オフライン時のみキャッシュにフォールバックする。
+//    - その他のアセット（画像・CSS・JS）はキャッシュ優先（従来通り）。
 self.addEventListener('fetch', (event) => {
+  const req = event.request;
+
+  // GET 以外（Firestore の POST 等）と http(s) 以外は SW で扱わない
+  if (req.method !== 'GET' || !req.url.startsWith('http')) return;
+
+  const isNavigation = req.mode === 'navigate' || req.destination === 'document';
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(req)
+        .then((response) => {
+          // 取得成功: キャッシュを最新版に更新してから返す
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+          return response;
+        })
+        .catch(() =>
+          // オフライン: キャッシュ済みのページを返す
+          caches.match(req).then((cached) => cached || caches.match('./index.html'))
+        )
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(req).then((response) => {
+      return response || fetch(req);
     })
   );
 });
