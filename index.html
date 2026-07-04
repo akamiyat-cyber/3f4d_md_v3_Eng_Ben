@@ -1730,28 +1730,34 @@ function refreshViews() {
         const isDone = f.completed && f.completed.includes('yp');
         tbody.innerHTML += `<tr class="row-base"><td>${t('yp_label')}</td><td class="fw-bold text-end">${f.dates['yp']}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small></td><td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('yp')"></td></tr>`;
     }
+    
+    // Create a sorted array of keys that have dates for the table rendering
+    const sortedKeys = [...dateKeys].filter(k => f.dates[k.id]).sort((a, b) => {
+        return f.dates[a.id].localeCompare(f.dates[b.id]);
+    });
+
     let prevDateStr = null;
-    dateKeys.forEach(k => {
+    sortedKeys.forEach(k => {
         const val = f.dates[k.id];
-        if(val) {
-            const benDate = getBengaliDate(val);
-            events.push({ title: `${t(k.id)} (${benDate})`, start: val, allDay: true, color: { pitan:'#28a745', md:'#e2b709', pi:'#ffe066', f3d:'#007bff', heading:'#6b46c1', base:'#718096' }[k.type] });
-            if (k.id.startsWith('f3d') && k.id !== 'f3d_end') {
-                events.push({ title: `3F4D Flood ৩এফ৪ডি প্লাবন`, start: val, end: formatDateISO(addDays(new Date(val), 3)), color: '#0056b3', allDay: true });
-                events.push({ title: `3F4D Drain ৩এফ৪ডি নিকাশ`, start: formatDateISO(addDays(new Date(val), 3)), end: formatDateISO(addDays(new Date(val), 7)), color: '#adb5bd', allDay: true });
-            }
-            let rowClass = `row-${k.type}`;
-            let warningText = "";
-            if (prevDateStr && val < prevDateStr) { rowClass += " row-error"; warningText = ` <span class="badge bg-danger">! Order</span>`; }
-            prevDateStr = val;
-            const isDone = f.completed && f.completed.includes(k.id);
-            let calcInfo = "";
-            if (f.autoDates && f.autoDates[k.id] && f.autoDates[k.id] !== val) {
-                const benCalcDate = getBengaliDate(f.autoDates[k.id]);
-                calcInfo = `<br><span class="text-muted" style="font-size: 0.7em;">${t('calc_val')} ${f.autoDates[k.id]} (${benCalcDate})</span>`;
-            }
-            tbody.innerHTML += `<tr class="${rowClass}"><td>${t(k.id)}${warningText}</td><td class="fw-bold text-end">${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small>${calcInfo}</td><td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('${k.id}')"></td></tr>`;
+        const benDate = getBengaliDate(val);
+        events.push({ title: `${t(k.id)} (${benDate})`, start: val, allDay: true, color: { pitan:'#28a745', md:'#e2b709', pi:'#ffe066', f3d:'#007bff', heading:'#6b46c1', base:'#718096' }[k.type] });
+        if (k.id.startsWith('f3d') && k.id !== 'f3d_end') {
+            events.push({ title: `3F4D Flood ৩এফ৪ডি প্লাবন`, start: val, end: formatDateISO(addDays(new Date(val), 3)), color: '#0056b3', allDay: true });
+            events.push({ title: `3F4D Drain ৩এফ৪ডি নিকাশ`, start: formatDateISO(addDays(new Date(val), 3)), end: formatDateISO(addDays(new Date(val), 7)), color: '#adb5bd', allDay: true });
         }
+        let rowClass = `row-${k.type}`;
+        let warningText = "";
+        
+        // Since we sort chronologically, val < prevDateStr will never happen.
+        // But if the user manually changes the order, it's just sorted differently.
+        
+        const isDone = f.completed && f.completed.includes(k.id);
+        let calcInfo = "";
+        if (f.autoDates && f.autoDates[k.id] && f.autoDates[k.id] !== val) {
+            const benCalcDate = getBengaliDate(f.autoDates[k.id]);
+            calcInfo = `<br><span class="text-muted" style="font-size: 0.7em;">${t('calc_val')} ${f.autoDates[k.id]} (${benCalcDate})</span>`;
+        }
+        tbody.innerHTML += `<tr class="${rowClass}"><td>${t(k.id)}${warningText}</td><td class="fw-bold text-end">${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small>${calcInfo}</td><td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('${k.id}')"></td></tr>`;
     });
     if(calendar) { calendar.removeAllEvents(); calendar.addEventSource(events); }
     const slideMarkers = document.getElementById('slide_markers');
