@@ -840,7 +840,7 @@
                         </thead>
                         <tbody>
                             <tr><td>播種日</td><td>Sowing</td><td>বপন</td><td>Setting date</td><td>তারিখ নির্ধারণ</td></tr>
-                            <tr><td>移植日</td><td>Transplanting</td><td>চারা রোপণ</td><td>Sowing + 40 days</td><td>বপন + ৪০ দিন</td></tr>
+                            <tr><td>移植日</td><td>Transplanting</td><td>চারা রোপণ</td><td>Sowing + 35 days</td><td>বপন + ৩৫ দিন</td></tr>
                             <tr><td>ピタン開始</td><td>Pitan Start</td><td>পিতান शुरू</td><td>Transplanting + Pitan start after transplanting</td><td>চারা রোপণ + চারা রোপণের পর পিতান শুরু</td></tr>
                             <tr><td>ピタン終了</td><td>Pitan End</td><td>পিতান শেষ</td><td>Pitan Start + Pitan Duration</td><td>পিতান शुरू + পিতানের সময়কাল</td></tr>
                             <tr><td>中干し開始</td><td>MD Start</td><td>এমডি शुरू</td><td>Sowing + MD End</td><td>বপন + বীজ বপনের পর এমডি শুরু</td></tr>
@@ -1526,7 +1526,7 @@ function recalculate(triggerId) {
             let hdDas = isSimple ? f.settings.sm_hd_das : f.settings.hd_das;
             setV('sowing', addDays(new Date(document.getElementById('date_heading').value), -parseInt(hdDas)));
         }
-        else if (document.getElementById('date_tp').value) setV('sowing', addDays(new Date(document.getElementById('date_tp').value), -40));
+        else if (document.getElementById('date_tp').value) setV('sowing', addDays(new Date(document.getElementById('date_tp').value), -35));
         else if (document.getElementById('date_md_start').value) {
             let mdOff = isSimple ? f.settings.sm_md_start_off : f.settings.md_start_off;
             setV('sowing', addDays(new Date(document.getElementById('date_md_start').value), -parseInt(mdOff)));
@@ -1535,7 +1535,7 @@ function recalculate(triggerId) {
     const sowingStr = document.getElementById('date_sowing').value;
     const sowing = sowingStr ? new Date(sowingStr) : null;
     if (sowing) {
-        setV('tp', addDays(sowing, 40));
+        setV('tp', addDays(sowing, 35));
     }
     
     const tpStr = document.getElementById('date_tp').value;
@@ -1544,8 +1544,8 @@ function recalculate(triggerId) {
     if (actualTp) {
         let mdOff = isSimple ? f.settings.sm_md_start_off : f.settings.md_start_off;
         let hdDas = isSimple ? f.settings.sm_hd_das : f.settings.hd_das;
-        setV('md_start', addDays(actualTp, parseInt(mdOff) - 40));
-        setV('heading', addDays(actualTp, parseInt(hdDas) - 40));
+        setV('md_start', addDays(actualTp, parseInt(mdOff) - 35));
+        setV('heading', addDays(actualTp, parseInt(hdDas) - 35));
         
         if (isSimple) {
             if (f.use_yp && document.getElementById('date_yp').value) {
