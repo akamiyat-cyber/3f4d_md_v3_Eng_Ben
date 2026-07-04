@@ -12,6 +12,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -333,6 +334,8 @@
         <div class="d-flex gap-2 flex-wrap justify-content-end">
             <button class="btn btn-sm btn-outline-info btn-label-gallery" onclick="openGallery()" title="Village Gallery">📷 Gallery</button>
             <button class="btn btn-sm btn-outline-primary btn-label-all-schedules" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules</button>
+            <button class="btn btn-sm btn-outline-warning prof-only" onclick="playAudioSchedule()" title="Play Audio" style="display:none;">🔊 Audio</button>
+            <button id="btn-dae-dashboard" class="btn btn-sm btn-outline-success prof-only" onclick="openDaeDashboard()" title="DAE Dashboard" style="display:none;">🗺️ DAE Dashboard</button>
             
 
             <select id="mode-selector" class="form-select form-select-sm" style="width: auto; margin-right: 5px;" onchange="changeMode(this.value)">
@@ -447,6 +450,13 @@
                                 <button class="btn btn-outline-secondary" type="button" onclick="getGPS()" id="btn-gps" title="Get GPS">📍</button>
                                 <button class="btn btn-outline-info" type="button" onclick="openGoogleMaps()" title="Open Google Maps">🗺️</button>
                                 <button class="btn btn-outline-danger" type="button" onclick="resetGPS()" title="Reset Coordinates">↺</button>
+                            </div>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <label class="small fw-bold text-muted">Shared Drive Link (e.g. Google Drive) <span style="font-size: 0.7rem">(Optional)</span></label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" id="prof_driveLink" class="form-control" placeholder="https://drive.google.com/..." onchange="updateProfile()">
+                                <button class="btn btn-outline-primary" type="button" onclick="openDriveLink()" title="Open Link">🔗</button>
                             </div>
                         </div>
                     </div>
@@ -869,8 +879,31 @@
     </div>
 </div>
 
+<!-- DAE Dashboard Modal -->
+<div class="modal fade" id="daeDashboardModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">DAE Dashboard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-2">
+                <div class="d-flex justify-content-between mb-2">
+                    <button class="btn btn-sm btn-success" onclick="exportDaeCsv()">⬇️ Export CSV</button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="renderDaeMap()">🔄 Refresh Map</button>
+                </div>
+                <div id="dae-map" style="height: 500px; width: 100%; border-radius: 8px; border: 1px solid #ccc;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
 <script>
 // --- Service Worker & Config ---
@@ -1362,6 +1395,7 @@ function loadActiveFarmer() {
     updateSizeUnitOptions(); 
     if(f.fieldSizeUnit) document.getElementById('prof_size_unit').value = f.fieldSizeUnit;
     document.getElementById('prof_coords').value = f.coordinates || "";
+    document.getElementById('prof_driveLink').value = f.driveLink || "";
 
     ['p_dur','md_dur','pi_check_off','hd_das','pi_off','f3d_off','hv_off', 'sm_md_start_off', 'sm_md_dur', 'sm_flood_start_off', 'sm_flood_start_tp_off', 'sm_flood_dur', 'sm_hd_das', 'sm_p_dur'].forEach(k => {
         if(f.settings[k] === undefined) f.settings[k] = DEFAULT_SETTINGS[k];
@@ -1402,6 +1436,7 @@ function updateProfile() {
     f.variety = document.getElementById('prof_variety').value;
     f.fieldSize = document.getElementById('prof_size').value;
     f.fieldSizeUnit = document.getElementById('prof_size_unit').value;
+    f.driveLink = document.getElementById('prof_driveLink').value;
     saveToLocal();
     // 村名変更時にタブ構造を再描画
     renderNav();
@@ -1780,7 +1815,13 @@ function refreshViews() {
             const benCalcDate = getBengaliDate(f.autoDates[k.id]);
             calcInfo = `<br><span class="text-muted" style="font-size: 0.7em;">${t('calc_val')} ${f.autoDates[k.id]} (${benCalcDate})</span>`;
         }
-        tbody.innerHTML += `<tr class="${rowClass}"><td>${t(k.id)}${warningText}</td><td class="fw-bold text-end">${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small>${calcInfo}</td><td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('${k.id}')"></td></tr>`;
+        
+        let actionsHtml = "";
+        if (currentMode === 'prof' && (k.id === 'md_start' || k.id.includes('flood_start') || k.id === 'sm_md_start' || k.id === 'sm_flood_start')) {
+            const smsBody = encodeURIComponent(`Reminder: ${t(k.id)} is scheduled for ${benDate} (${val}).`);
+            actionsHtml = `<br><a href="sms:?body=${smsBody}" class="text-decoration-none me-1" title="Send SMS">📱</a><a href="https://wa.me/?text=${smsBody}" target="_blank" class="text-decoration-none" title="Send WhatsApp">💬</a>`;
+        }
+        tbody.innerHTML += `<tr class="${rowClass}"><td>${t(k.id)}${warningText}${actionsHtml}</td><td class="fw-bold text-end">${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small>${calcInfo}</td><td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('${k.id}')"></td></tr>`;
     });
     if(calendar) { calendar.removeAllEvents(); calendar.addEventSource(events); }
     const slideMarkers = document.getElementById('slide_markers');
@@ -1973,6 +2014,74 @@ function updateFromManual(id) {
 // ==========================================
 // ★ New Navigation & Structure Logic
 // ==========================================
+
+function openDriveLink() {
+    const f = farmers[activeIdx];
+    if (f.driveLink && f.driveLink.trim() !== '') {
+        let url = f.driveLink.trim();
+        if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+        window.open(url, '_blank');
+    } else alert('Please enter a valid Google Drive or Dropbox link first.');
+}
+
+function playAudioSchedule() {
+    const f = farmers[activeIdx];
+    if (!f || !f.dates) return;
+    const isBn = currentLang === 'bn';
+    let text = isBn ? `${f.name} এর সময়সূচী। ` : `Schedule for ${f.name}. `;
+    
+    if (f.dates.sow) text += isBn ? `বপন: ${f.dates.sow}. ` : `Sowing: ${f.dates.sow}. `;
+    if (f.dates.tp) text += isBn ? `রোপন: ${f.dates.tp}. ` : `Transplanting: ${f.dates.tp}. `;
+    if (f.dates.md_start || f.dates.sm_md_start) text += isBn ? `মাঝারি শুকানো শুরু: ${f.dates.md_start || f.dates.sm_md_start}. ` : `Mid-season drainage start: ${f.dates.md_start || f.dates.sm_md_start}. `;
+    if (f.dates.pi_flood_start || f.dates.sm_flood_start) text += isBn ? `প্লাবন শুরু: ${f.dates.pi_flood_start || f.dates.sm_flood_start}. ` : `Flooding start: ${f.dates.pi_flood_start || f.dates.sm_flood_start}. `;
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = isBn ? 'bn-BD' : 'en-US';
+    window.speechSynthesis.speak(utterance);
+}
+
+function exportDaeCsv() {
+    if (farmers.length === 0) return alert("No farmers registered.");
+    let csvContent = "data:text/csv;charset=utf-8,Name,Village,Variety,Field Size,Coordinates,Sowing Date,Transplanting Date,MD Start,MD End,Flooding Start,Flooding End,Heading Date\n";
+    farmers.forEach(f => {
+        const row = [ f.name||'', f.village||'', f.variety||'', `${f.fieldSize||''} ${f.fieldSizeUnit||''}`, f.coordinates||'',
+            f.dates?.sow||'', f.dates?.tp||'', f.dates?.md_start||f.dates?.sm_md_start||'', f.dates?.md_end||f.dates?.sm_md_end||'', 
+            f.dates?.pi_flood_start||f.dates?.sm_flood_start||'', f.dates?.pi_flood_end||f.dates?.sm_flood_end||'', f.dates?.hd||''
+        ].map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',');
+        csvContent += row + "\n";
+    });
+    const link = document.createElement("a");
+    link.href = encodeURI(csvContent);
+    link.download = "dae_farmers_schedule.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+let daeMap = null;
+function openDaeDashboard() {
+    new bootstrap.Modal(document.getElementById('daeDashboardModal')).show();
+    setTimeout(() => renderDaeMap(), 500);
+}
+function renderDaeMap() {
+    if (!daeMap) {
+        daeMap = L.map('dae-map').setView([23.6850, 90.3563], 7);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(daeMap);
+    } else {
+        daeMap.eachLayer((layer) => { if (layer instanceof L.Marker) daeMap.removeLayer(layer); });
+    }
+    const bounds = [];
+    farmers.forEach(f => {
+        if (f.coordinates) {
+            const [lat, lng] = f.coordinates.split(',').map(n => parseFloat(n.trim()));
+            if (!isNaN(lat) && !isNaN(lng)) {
+                L.marker([lat, lng]).addTo(daeMap).bindPopup(`<b>${f.name}</b><br>${f.village || ''}`);
+                bounds.push([lat, lng]);
+            }
+        }
+    });
+    if (bounds.length > 0) daeMap.fitBounds(bounds, { padding: [20, 20], maxZoom: 15 });
+}
 
 function renderNav() {
     const vContainer = document.getElementById('villageTabs');
@@ -2849,6 +2958,30 @@ async function fetchWeather(coordsStr) {
         
         container.innerHTML = '';
         const daily = data.daily;
+        
+        const f = farmers[activeIdx];
+        const alertsContainer = document.getElementById('weather-alerts-container');
+        if (alertsContainer) alertsContainer.innerHTML = '';
+        let mdWarning = false, floodWarning = false;
+        
+        if (f && f.dates) {
+            const mdStart = f.dates.md_start ? new Date(f.dates.md_start) : null;
+            const mdEnd = f.dates.md_end ? new Date(f.dates.md_end) : null;
+            const floodStart = f.dates.pi_flood_start ? new Date(f.dates.pi_flood_start) : null;
+            const floodEnd = f.dates.pi_flood_end ? new Date(f.dates.pi_flood_end) : null;
+
+            for (let i = 0; i < daily.time.length; i++) {
+                const dateObj = new Date(daily.time[i]);
+                const rain = daily.precipitation_sum[i];
+                const maxT = daily.temperature_2m_max[i];
+                if (mdStart && mdEnd && dateObj >= mdStart && dateObj <= mdEnd && rain > 5) mdWarning = true;
+                if (floodStart && floodEnd && dateObj >= floodStart && dateObj <= floodEnd && maxT > 35) floodWarning = true;
+            }
+            if (alertsContainer && currentMode === 'prof') {
+                if (mdWarning) alertsContainer.innerHTML += `<div class="alert alert-warning py-2 mb-2" style="font-size:0.8rem;">⚠️ <b>Weather Alert:</b> Heavy rain expected during Mid-Season Drainage.</div>`;
+                if (floodWarning) alertsContainer.innerHTML += `<div class="alert alert-danger py-2 mb-2" style="font-size:0.8rem;">🔥 <b>Weather Alert:</b> Extreme heat (>35°C) expected during Flooding.</div>`;
+            }
+        }
         
         for (let i = 0; i < daily.time.length; i++) {
             const dateStr = daily.time[i];
