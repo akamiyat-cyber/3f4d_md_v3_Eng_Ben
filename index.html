@@ -335,7 +335,7 @@
             <button class="btn btn-sm btn-outline-info btn-label-gallery" onclick="openGallery()" title="Village Gallery">📷 Gallery</button>
             <button class="btn btn-sm btn-outline-primary btn-label-all-schedules" onclick="showAllSchedules()" title="View All Schedules">📋 All Schedules</button>
             <button class="btn btn-sm btn-outline-warning prof-only" onclick="playAudioSchedule()" title="Play Audio" style="display:none;">🔊 Audio</button>
-            <button id="btn-dae-dashboard" class="btn btn-sm btn-outline-success prof-only" onclick="openDaeDashboard()" title="DAE Dashboard" style="display:none;">🗺️ DAE Dashboard</button>
+            <button id="btn-dae-dashboard" class="btn btn-sm btn-outline-success prof-only" onclick="openDaeDashboard()" title="Summary" style="display:none;">🗺️ Summary</button>
             
 
             <select id="mode-selector" class="form-select form-select-sm" style="width: auto; margin-right: 5px;" onchange="changeMode(this.value)">
@@ -879,12 +879,12 @@
     </div>
 </div>
 
-<!-- DAE Dashboard Modal -->
+<!-- Summary Modal -->
 <div class="modal fade" id="daeDashboardModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">DAE Dashboard</h5>
+                <h5 class="modal-title">Summary</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-2">
