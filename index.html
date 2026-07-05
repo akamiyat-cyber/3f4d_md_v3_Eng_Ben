@@ -2029,18 +2029,47 @@ function openDriveLink() {
 }
 
 function playAudioSchedule() {
+    const btn = document.querySelector('.btn-outline-warning.prof-only');
+    if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        if (btn) btn.innerHTML = '🔊 Audio';
+        return;
+    }
+
     const f = farmers[activeIdx];
     if (!f || !f.dates) return;
     const isBn = currentLang === 'bn';
-    let text = isBn ? `${f.name} এর সময়সূচী। ` : `Schedule for ${f.name}. `;
     
-    if (f.dates.sow) text += isBn ? `বপন: ${f.dates.sow}. ` : `Sowing: ${f.dates.sow}. `;
-    if (f.dates.tp) text += isBn ? `রোপন: ${f.dates.tp}. ` : `Transplanting: ${f.dates.tp}. `;
-    if (f.dates.md_start || f.dates.sm_md_start) text += isBn ? `মাঝারি শুকানো শুরু: ${f.dates.md_start || f.dates.sm_md_start}. ` : `Mid-season drainage start: ${f.dates.md_start || f.dates.sm_md_start}. `;
-    if (f.dates.pi_flood_start || f.dates.sm_flood_start) text += isBn ? `প্লাবন শুরু: ${f.dates.pi_flood_start || f.dates.sm_flood_start}. ` : `Flooding start: ${f.dates.pi_flood_start || f.dates.sm_flood_start}. `;
+    let text = isBn ? `${f.name} এর সময়সূচী। ` : `Schedule for ${f.name}. `;
+
+    const sortedKeys = [...dateKeys].filter(k => f.dates[k.id]).sort((a, b) => {
+        return f.dates[a.id].localeCompare(f.dates[b.id]);
+    });
+
+    sortedKeys.forEach(k => {
+        const val = f.dates[k.id];
+        const label = t(k.id);
+        const d = new Date(val);
+        let dateStr = val;
+        if (isBn) {
+             const m = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"][d.getMonth()];
+             const day = d.getDate().toString().replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
+             dateStr = `${day} ${m}`;
+        } else {
+             const m = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][d.getMonth()];
+             dateStr = `${m} ${d.getDate()}`;
+        }
+        text += `${label}: ${dateStr}. `;
+    });
     
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = isBn ? 'bn-BD' : 'en-US';
+    
+    utterance.onend = () => {
+        if (btn) btn.innerHTML = '🔊 Audio';
+    };
+    
+    if (btn) btn.innerHTML = '⏹️ Stop';
     window.speechSynthesis.speak(utterance);
 }
 
