@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3F4D+MD Pro — User Manual / ব্যবহার নির্দেশিকা</title>
+<style>
+  :root{
+    --brand:#007aff; --brand-dark:#0056b3; --green:#28a745; --amber:#e2b709;
+    --purple:#6b46c1; --ink:#1f2937; --muted:#6b7280; --line:#e5e7eb;
+    --bg:#f7f9fb; --card:#ffffff; --danger:#dc3545;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; color:var(--ink); background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",
+      "Hiragino Sans","Noto Sans Bengali","Kohinoor Bangla","Bangla MN",Arial,sans-serif;
+    line-height:1.65; font-size:16px;
+  }
+  /* language visibility */
+  body.lang-en .bn{display:none;}
+  body.lang-bn .en{display:none;}
+  .bn{font-size:1.02em;}
+
+  header.top{
+    background:linear-gradient(135deg,var(--brand),var(--brand-dark));
+    color:#fff; padding:26px 20px 30px;
+  }
+  .top-inner{max-width:900px;margin:0 auto;}
+  .brandline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .brandline h1{font-size:1.5rem;margin:0;font-weight:800;letter-spacing:.3px;}
+  .badge-jica{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);
+    padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:600;}
+  header.top p{margin:.5rem 0 0;opacity:.95;font-size:.95rem;}
+
+  .toolbar{
+    position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line);
+    display:flex;gap:10px;align-items:center;justify-content:space-between;
+    padding:8px 16px;flex-wrap:wrap;
+  }
+  .toolbar .left{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .btn{
+    border:1px solid var(--line);background:#fff;color:var(--ink);
+    padding:6px 12px;border-radius:8px;font-size:.85rem;cursor:pointer;font-weight:600;
+    text-decoration:none;display:inline-block;
+  }
+  .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;}
+  .btn.active{background:var(--brand);border-color:var(--brand);color:#fff;}
+  .btn:hover{filter:brightness(.97);}
+
+  main{max-width:900px;margin:0 auto;padding:22px 18px 80px;}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:20px 22px;margin:0 0 18px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  section h2{font-size:1.22rem;margin:.1rem 0 .8rem;color:var(--brand-dark);
+    display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--line);padding-bottom:.5rem;}
+  section h2 .num{background:var(--brand);color:#fff;width:30px;height:30px;border-radius:8px;
+    display:inline-flex;align-items:center;justify-content:center;font-size:.95rem;flex:0 0 auto;}
+  h3{font-size:1.02rem;margin:1.1rem 0 .4rem;color:var(--ink);}
+  p{margin:.5rem 0;}
+  ul,ol{margin:.4rem 0 .7rem;padding-left:1.4rem;}
+  li{margin:.28rem 0;}
+  .lead{font-size:1.02rem;color:#374151;}
+
+  .callout{border-left:4px solid var(--brand);background:#eff6ff;border-radius:8px;
+    padding:10px 14px;margin:.8rem 0;font-size:.95rem;}
+  .callout.warn{border-color:#f59e0b;background:#fffbeb;}
+  .callout.danger{border-color:var(--danger);background:#fef2f2;}
+  .callout.ok{border-color:var(--green);background:#f0fdf4;}
+  .callout .tag{font-weight:800;display:block;margin-bottom:2px;}
+
+  .steps{counter-reset:s;list-style:none;padding-left:0;}
+  .steps>li{counter-increment:s;position:relative;padding:8px 0 8px 44px;border-bottom:1px dashed var(--line);}
+  .steps>li:last-child{border-bottom:none;}
+  .steps>li::before{content:counter(s);position:absolute;left:0;top:8px;
+    width:30px;height:30px;background:var(--green);color:#fff;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;}
+
+  table{width:100%;border-collapse:collapse;margin:.7rem 0;font-size:.9rem;}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;}
+  th{background:#f1f5f9;font-weight:700;}
+  .pill{display:inline-block;padding:1px 8px;border-radius:20px;font-size:.78rem;font-weight:700;color:#fff;}
+  .pill.md{background:var(--amber);} .pill.pi{background:#d1a000;}
+  .pill.f3d{background:var(--brand);} .pill.head{background:var(--purple);}
+  .pill.base{background:#718096;} .pill.pitan{background:var(--green);}
+  .key{background:#f1f5f9;border:1px solid var(--line);border-radius:6px;padding:1px 7px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;white-space:nowrap;}
+
+  .toc{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:18px;}
+  .toc h2{border:none;color:var(--brand-dark);margin-top:0;}
+  .toc ol{columns:2;column-gap:26px;}
+  @media(max-width:620px){.toc ol{columns:1;} .toolbar{position:static;}}
+  .toc a{color:var(--brand-dark);text-decoration:none;}
+  .toc a:hover{text-decoration:underline;}
+
+  footer{max-width:900px;margin:0 auto;padding:0 18px 60px;color:var(--muted);font-size:.85rem;}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:620px){.two{grid-template-columns:1fr;}}
+  .mini{font-size:.85rem;color:var(--muted);}
+
+  /* PRINT / PDF: show both languages, flatten UI */
+  @media print{
+    .toolbar,.no-print{display:none!important;}
+    body.lang-en .bn, body.lang-bn .en{display:block!important;}
+    body{background:#fff;font-size:11.5px;}
+    header.top{background:var(--brand-dark)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    section{break-inside:avoid;box-shadow:none;border-color:#d1d5db;}
+    th{background:#eef2f7!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .bn{border-top:1px dotted #cbd5e1;margin-top:4px;padding-top:3px;color:#334155;}
+    a{color:var(--ink);text-decoration:none;}
+    .toc ol{columns:2;}
+  }
+</style>
+</head>
+<body class="lang-en">
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brandline">
+      <h1>💧 3F4D+MD Pro</h1>
+      <span class="badge-jica">JICA / JST</span>
+    </div>
+    <p class="en">User Manual — Water-saving irrigation scheduler for rice (Mid-season Drainage + 3-day Flood / 4-day Drain)</p>
+    <p class="bn">ব্যবহার নির্দেশিকা — ধানের পানি-সাশ্রয়ী সেচ সময়সূচী অ্যাপ (মধ্য-মৌসুম নিকাশ + ৩ দিন প্লাবন / ৪ দিন নিকাশ)</p>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="left">
+    <span class="mini en">Language:</span>
+    <span class="mini bn">ভাষা:</span>
+    <button class="btn lang-btn active" data-lang="en" onclick="setLang('en')">English</button>
+    <button class="btn lang-btn" data-lang="bn" onclick="setLang('bn')">বাংলা</button>
+  </div>
+  <div class="left">
+    <button class="btn no-print" onclick="window.print()">🖨️ <span class="en">Print / PDF</span><span class="bn">প্রিন্ট / পিডিএফ</span></button>
+    <a class="btn primary" href="./index.html">↩︎ <span class="en">Back to App</span><span class="bn">অ্যাপে ফিরুন</span></a>
+  </div>
+</div>
+
+<main>
+
+  <!-- TOC -->
+  <div class="toc no-print">
+    <h2><span class="en">Contents</span><span class="bn">সূচিপত্র</span></h2>
+    <ol>
+      <li><a href="#about"><span class="en">What this app does</span><span class="bn">অ্যাপটি কী করে</span></a></li>
+      <li><a href="#method"><span class="en">The 3F4D+MD method</span><span class="bn">৩এফ৪ডি+এমডি পদ্ধতি</span></a></li>
+      <li><a href="#install"><span class="en">Install on your phone</span><span class="bn">ফোনে ইনস্টল</span></a></li>
+      <li><a href="#screen"><span class="en">Screen overview</span><span class="bn">স্ক্রিন পরিচিতি</span></a></li>
+      <li><a href="#quick"><span class="en">Quick start (5 steps)</span><span class="bn">দ্রুত শুরু (৫ ধাপ)</span></a></li>
+      <li><a href="#villages"><span class="en">Villages &amp; Farmers</span><span class="bn">গ্রাম ও কৃষক</span></a></li>
+      <li><a href="#profile"><span class="en">Field Profile</span><span class="bn">মাঠের প্রোফাইল</span></a></li>
+      <li><a href="#settings"><span class="en">Basic settings &amp; modes</span><span class="bn">মৌলিক সেটিংস ও মোড</span></a></li>
+      <li><a href="#dates"><span class="en">Date Settings &amp; auto-calc</span><span class="bn">তারিখ ও স্বয়ংক্রিয় হিসাব</span></a></li>
+      <li><a href="#views"><span class="en">The five views</span><span class="bn">পাঁচটি ভিউ</span></a></li>
+      <li><a href="#record"><span class="en">Recording progress</span><span class="bn">অগ্রগতি রেকর্ড</span></a></li>
+      <li><a href="#notify"><span class="en">Today's tasks &amp; alerts</span><span class="bn">আজকের কাজ ও নোটিফিকেশন</span></a></li>
+      <li><a href="#weather"><span class="en">Weather</span><span class="bn">আবহাওয়া</span></a></li>
+      <li><a href="#pro"><span class="en">Professional tools</span><span class="bn">প্রফেশনাল টুলস</span></a></li>
+      <li><a href="#backup"><span class="en">Backup &amp; Export</span><span class="bn">ব্যাকআপ ও এক্সপোর্ট</span></a></li>
+      <li><a href="#sync"><span class="en">Team Sync</span><span class="bn">টিম সিঙ্ক</span></a></li>
+      <li><a href="#update"><span class="en">Updating &amp; data safety</span><span class="bn">আপডেট ও ডেটা সুরক্ষা</span></a></li>
+      <li><a href="#faq"><span class="en">Troubleshooting / FAQ</span><span class="bn">সমস্যা সমাধান</span></a></li>
+    </ol>
+  </div>
+
+  <!-- 1 ABOUT -->
+  <section id="about">
+    <h2><span class="num">1</span><span class="en">What this app does</span><span class="bn">অ্যাপটি কী করে</span></h2>
+    <p class="lead en">3F4D+MD Pro builds a complete, date-by-date water-management schedule for a rice field from a single starting date. It tells you exactly when to drain and when to flood so you save irrigation water, reduce arsenic in the grain, and protect yield.</p>
+    <p class="lead bn">৩এফ৪ডি+এমডি প্রো একটি ধানের জমির জন্য শুধু একটি শুরুর তারিখ থেকে সম্পূর্ণ দিন-ভিত্তিক পানি ব্যবস্থাপনার সময়সূচী তৈরি করে। কখন পানি নিকাশ করতে হবে আর কখন প্লাবন দিতে হবে তা সঠিকভাবে জানায়—যাতে সেচের পানি সাশ্রয় হয়, চালে আর্সেনিক কমে এবং ফলন সুরক্ষিত থাকে।</p>
+    <div class="callout">
+      <span class="tag en">Who is it for?</span><span class="tag bn">কার জন্য?</span>
+      <span class="en">Agricultural extension workers (DAE), field facilitators, and farmers. One worker can manage many villages and many farmers in one app.</span>
+      <span class="bn">কৃষি সম্প্রসারণ কর্মী (DAE), মাঠ সহায়ক এবং কৃষকদের জন্য। একজন কর্মী একই অ্যাপে অনেক গ্রাম ও অনেক কৃষক পরিচালনা করতে পারেন।</span>
+    </div>
+    <div class="callout ok">
+      <span class="tag en">Works offline</span><span class="tag bn">অফলাইনে চলে</span>
+      <span class="en">After the first visit, the app runs without internet. All data is saved on your phone. Internet is only needed for map tiles, weather, and optional team sync.</span>
+      <span class="bn">প্রথমবার খোলার পর অ্যাপটি ইন্টারনেট ছাড়াই চলে। সব তথ্য আপনার ফোনে সংরক্ষিত থাকে। শুধু মানচিত্র, আবহাওয়া ও ঐচ্ছিক টিম সিঙ্কের জন্য ইন্টারনেট লাগে।</span>
+    </div>
+  </section>
+
+  <!-- 2 METHOD -->
+  <section id="method">
+    <h2><span class="num">2</span><span class="en">The 3F4D+MD method</span><span class="bn">৩এফ৪ডি+এমডি পদ্ধতি</span></h2>
+    <p class="en">The schedule follows three agronomic stages. You do not need to memorise them—the app places every date for you—but understanding the stages helps you read the schedule.</p>
+    <p class="bn">সময়সূচীটি তিনটি কৃষিতাত্ত্বিক ধাপ অনুসরণ করে। মুখস্থ করার দরকার নেই—অ্যাপ প্রতিটি তারিখ বসিয়ে দেয়—তবে ধাপগুলো বুঝলে সময়সূচী পড়া সহজ হয়।</p>
+
+    <h3><span class="pill md">MD</span> <span class="en">Mid-season Drainage</span><span class="bn">মধ্য-মৌসুম নিকাশ (Mid-season Drainage)</span></h3>
+    <ul>
+      <li class="en">Starts about <b>80 days after sowing</b> (≈35–40 days after transplanting), around 33 days before heading.</li>
+      <li class="bn">শুরু হয় প্রায় <b>বপনের ৮০ দিন পর</b> (চারা রোপণের ≈৩৫–৪০ দিন পর), শীষ আসার প্রায় ৩৩ দিন আগে।</li>
+      <li class="en">Let the field dry for about <b>8 days</b> once the standing water has disappeared.</li>
+      <li class="bn">দাঁড়ানো পানি শুকিয়ে গেলে জমি প্রায় <b>৮ দিন</b> শুকনো রাখুন।</li>
+    </ul>
+    <div class="callout warn">
+      <span class="en">For best yield, start MD when the average number of tillers (with at least two leaves) exceeds <b>10 for Rod miniket</b> and <b>11 for BRRI dhan50</b> (≈80% of the ideal panicle number).</span>
+      <span class="bn">সর্বোত্তম ফলনের জন্য, প্রতিনিধি গাছের গড় কুশির সংখ্যা (কমপক্ষে দুটি পাতাসহ) <b>রড মিনিকেটের জন্য ১০</b> এবং <b>ব্রি ধান৫০-এর জন্য ১১</b> ছাড়ালে MD শুরু করুন (আদর্শ শীষ সংখ্যার ≈৮০%)।</span>
+    </div>
+
+    <h3><span class="pill pi">F</span> <span class="en">Pre-3F4D Flooding (4 days)</span><span class="bn">৩এফ৪ডি-পূর্ব প্লাবন (৪ দিন)</span></h3>
+    <ul>
+      <li class="en">About <b>25 days before heading</b> (≈95–105 days after sowing / 50–60 days after transplanting), flood the field and keep it flooded for <b>4 days</b>.</li>
+      <li class="bn">শীষ আসার প্রায় <b>২৫ দিন আগে</b> (বপনের ≈৯৫–১০৫ দিন / চারা রোপণের ৫০–৬০ দিন পর) জমি প্লাবিত করে <b>৪ দিন</b> প্লাবিত রাখুন।</li>
+      <li class="en">Best started at panicle initiation, when the young panicle reaches <b>1–2 mm</b>. This step also helps reduce arsenic in the grain.</li>
+      <li class="bn">সর্বোত্তম—শীষ গঠনের সময়, যখন কচি শীষ <b>১–২ মিমি</b> হয়। এই ধাপ চালে আর্সেনিক কমাতেও সাহায্য করে।</li>
+    </ul>
+
+    <h3><span class="pill f3d">3F4D</span> <span class="en">3-day Flood / 4-day Drain cycle</span><span class="bn">৩ দিন প্লাবন / ৪ দিন নিকাশ চক্র</span></h3>
+    <ul>
+      <li class="en">Right after the 4-day flooding, repeat: <b>3 days flooded, then 4 days drained</b> (one week per cycle).</li>
+      <li class="bn">৪ দিন প্লাবনের ঠিক পরে পুনরাবৃত্তি করুন: <b>৩ দিন প্লাবন, তারপর ৪ দিন নিকাশ</b> (প্রতি চক্র এক সপ্তাহ)।</li>
+      <li class="en">Repeat the cycle <b>6 times (6 weeks)</b>.</li>
+      <li class="bn">চক্রটি <b>৬ বার (৬ সপ্তাহ)</b> পুনরাবৃত্তি করুন।</li>
+      <li class="en">After the 6th cycle, do a final drainage to dry the field before harvest.</li>
+      <li class="bn">৬ষ্ঠ চক্রের পর, ফসল কাটার আগে জমি শুকাতে চূড়ান্ত নিকাশ করুন।</li>
+    </ul>
+    <p class="mini en">Tip: Open <b>⚙️ → Logic Configuration (Formulas)</b> in the app to see the exact formula behind every date, in Japanese / English / Bengali.</p>
+    <p class="mini bn">টিপ: অ্যাপে <b>⚙️ → Logic Configuration (Formulas)</b> খুললে প্রতিটি তারিখের সঠিক সূত্র জাপানি / ইংরেজি / বাংলায় দেখা যায়।</p>
+  </section>
+
+  <!-- 3 INSTALL -->
+  <section id="install">
+    <h2><span class="num">3</span><span class="en">Install on your phone</span><span class="bn">ফোনে ইনস্টল করুন</span></h2>
+    <p class="en">The app is a website that installs like an app (a “PWA”). Installing gives you a home-screen icon, full-screen view, and notifications.</p>
+    <p class="bn">অ্যাপটি একটি ওয়েবসাইট যা অ্যাপের মতো ইনস্টল হয় (“PWA”)। ইনস্টল করলে হোম-স্ক্রিনে আইকন, ফুল-স্ক্রিন ভিউ এবং নোটিফিকেশন পাওয়া যায়।</p>
+    <div class="two">
+      <div>
+        <h3>🤖 <span class="en">Android (Chrome)</span><span class="bn">অ্যান্ড্রয়েড (ক্রোম)</span></h3>
+        <ol>
+          <li class="en">Open the app link in Chrome.</li><li class="bn">ক্রোমে অ্যাপ লিংকটি খুলুন।</li>
+          <li class="en">Tap the <b>⋮</b> menu → <b>Add to Home screen / Install app</b>.</li>
+          <li class="bn"><b>⋮</b> মেনু → <b>Add to Home screen / Install app</b> চাপুন।</li>
+          <li class="en">Open it from the new home-screen icon.</li><li class="bn">নতুন হোম-স্ক্রিন আইকন থেকে খুলুন।</li>
+        </ol>
+      </div>
+      <div>
+        <h3>🍎 <span class="en">iPhone / iPad (Safari)</span><span class="bn">আইফোন / আইপ্যাড (সাফারি)</span></h3>
+        <ol>
+          <li class="en">Open the app link in <b>Safari</b>.</li><li class="bn"><b>সাফারি</b>-তে অ্যাপ লিংকটি খুলুন।</li>
+          <li class="en">Tap <b>Share</b> ⬆️ → <b>Add to Home Screen</b>.</li>
+          <li class="bn"><b>Share</b> ⬆️ → <b>Add to Home Screen</b> চাপুন।</li>
+          <li class="en">Open it from the home-screen icon.</li><li class="bn">হোম-স্ক্রিন আইকন থেকে খুলুন।</li>
+        </ol>
+      </div>
+    </div>
+    <div class="callout warn">
+      <span class="en"><b>iPhone note:</b> notifications only work if you first “Add to Home Screen” and open the app from that icon (Apple requirement).</span>
+      <span class="bn"><b>আইফোন নোট:</b> নোটিফিকেশন কাজ করতে হলে আগে “Add to Home Screen” করে সেই আইকন থেকে অ্যাপ খুলতে হবে (Apple-এর নিয়ম)।</span>
+    </div>
+  </section>
+
+  <!-- 4 SCREEN -->
+  <section id="screen">
+    <h2><span class="num">4</span><span class="en">Screen overview</span><span class="bn">স্ক্রিন পরিচিতি</span></h2>
+    <table>
+      <thead><tr>
+        <th><span class="en">Control</span><span class="bn">নিয়ন্ত্রণ</span></th>
+        <th><span class="en">What it does</span><span class="bn">কাজ</span></th>
+      </tr></thead>
+      <tbody>
+        <tr><td><b>📷 Gallery</b></td><td><span class="en">All photos of the current village.</span><span class="bn">বর্তমান গ্রামের সব ছবি।</span></td></tr>
+        <tr><td><b>📋 All Schedules</b></td><td><span class="en">Every event of every farmer in one dated list; today is highlighted.</span><span class="bn">সব কৃষকের সব ইভেন্ট একটি তারিখ-ভিত্তিক তালিকায়; আজকের দিন হাইলাইট করা।</span></td></tr>
+        <tr><td><b>Simple / Professional</b></td><td><span class="en">Switches between the easy setup and the full expert setup (see §8).</span><span class="bn">সহজ সেটআপ ও পূর্ণ বিশেষজ্ঞ সেটআপের মধ্যে বদল (§৮ দেখুন)।</span></td></tr>
+        <tr><td><b>English / বাংলা</b></td><td><span class="en">Changes the whole app language.</span><span class="bn">পুরো অ্যাপের ভাষা পরিবর্তন করে।</span></td></tr>
+        <tr><td><b>⚙️</b></td><td><span class="en">Backup, export (PDF/CSV/JSON), delete village, reset, test notification, formulas, and Admin/Sync.</span><span class="bn">ব্যাকআপ, এক্সপোর্ট (PDF/CSV/JSON), গ্রাম মুছুন, রিসেট, টেস্ট নোটিফিকেশন, সূত্র এবং Admin/Sync।</span></td></tr>
+        <tr><td><b>🔊 Audio / 🗺️ DAE Dashboard</b></td><td><span class="en">Appear only in Professional mode (see §14).</span><span class="bn">শুধু প্রফেশনাল মোডে দেখা যায় (§১৪ দেখুন)।</span></td></tr>
+      </tbody>
+    </table>
+    <p class="en">Below the header are two rows of tabs: the top row is <b>Villages</b>, the second row is <b>Farmers</b> in the selected village. A yellow banner shows any tasks due <b>today</b>.</p>
+    <p class="bn">হেডারের নিচে দুই সারি ট্যাব: উপরের সারি <b>গ্রাম</b>, দ্বিতীয় সারি নির্বাচিত গ্রামের <b>কৃষক</b>। হলুদ ব্যানার <b>আজকের</b> কাজ দেখায়।</p>
+  </section>
+
+  <!-- 5 QUICK -->
+  <section id="quick">
+    <h2><span class="num">5</span><span class="en">Quick start — 5 steps</span><span class="bn">দ্রুত শুরু — ৫ ধাপ</span></h2>
+    <ol class="steps">
+      <li><span class="en"><b>Choose language and mode</b> (top-right). Beginners: keep <b>Simple</b>.</span>
+          <span class="bn"><b>ভাষা ও মোড নির্বাচন করুন</b> (উপরে-ডানে)। নতুনদের জন্য <b>Simple</b> রাখুন।</span></li>
+      <li><span class="en"><b>Add a Village</b> (＋ on the village row) and a <b>Farmer</b> (＋ on the farmer row).</span>
+          <span class="bn"><b>গ্রাম যোগ করুন</b> (গ্রাম সারির ＋) এবং <b>কৃষক যোগ করুন</b> (কৃষক সারির ＋)।</span></li>
+      <li><span class="en">Open <b>0. Field Profile</b> and fill in name, variety, field size and GPS.</span>
+          <span class="bn"><b>0. Field Profile</b> খুলে নাম, জাত, জমির আকার ও GPS দিন।</span></li>
+      <li><span class="en">In <b>2. Date Settings</b>, enter the <b>Sowing</b> date (or Transplanting). The whole schedule fills in automatically.</span>
+          <span class="bn"><b>2. Date Settings</b>-এ <b>Sowing</b> (বা Transplanting) তারিখ দিন। পুরো সময়সূচী নিজে থেকে পূরণ হবে।</span></li>
+      <li><span class="en">Check the <b>Table / Calendar</b> views, then tick tasks as “Done” as the season progresses.</span>
+          <span class="bn"><b>Table / Calendar</b> ভিউ দেখুন, তারপর মৌসুম এগোলে কাজগুলো “Done” টিক দিন।</span></li>
+    </ol>
+    <div class="callout ok"><span class="en">That's it. Everything below is detail you can return to when needed.</span><span class="bn">এইটুকুই। নিচের সব বিস্তারিত—দরকারে ফিরে দেখুন।</span></div>
+  </section>
+
+  <!-- 6 VILLAGES -->
+  <section id="villages">
+    <h2><span class="num">6</span><span class="en">Villages &amp; Farmers</span><span class="bn">গ্রাম ও কৃষক</span></h2>
+    <ul>
+      <li class="en"><b>Add village:</b> tap ＋ on the village row and type a name.</li>
+      <li class="bn"><b>গ্রাম যোগ:</b> গ্রাম সারির ＋ চেপে নাম লিখুন।</li>
+      <li class="en"><b>Add farmer:</b> tap ＋ on the farmer row (added to the current village).</li>
+      <li class="bn"><b>কৃষক যোগ:</b> কৃষক সারির ＋ চাপুন (বর্তমান গ্রামে যোগ হবে)।</li>
+      <li class="en"><b>Switch:</b> tap any village or farmer tab to view it.</li>
+      <li class="bn"><b>বদল:</b> যেকোনো গ্রাম বা কৃষক ট্যাবে চাপ দিয়ে দেখুন।</li>
+      <li class="en"><b>Rename / Delete farmer:</b> small buttons under the tabs.</li>
+      <li class="bn"><b>নাম পরিবর্তন / মুছুন:</b> ট্যাবের নিচের ছোট বোতাম।</li>
+      <li class="en"><b>Delete village:</b> ⚙️ menu → Delete Village (removes all its farmers).</li>
+      <li class="bn"><b>গ্রাম মুছুন:</b> ⚙️ মেনু → Delete Village (এর সব কৃষক মুছে যায়)।</li>
+    </ul>
+    <div class="callout warn"><span class="en">A red “!” badge on a village and a 💧 next to a farmer mean a task is due today for them.</span><span class="bn">গ্রামে লাল “!” এবং কৃষকের পাশে 💧 মানে আজ তাদের একটি কাজ আছে।</span></div>
+  </section>
+
+  <!-- 7 PROFILE -->
+  <section id="profile">
+    <h2><span class="num">7</span><span class="en">0. Field Profile</span><span class="bn">0. মাঠের প্রোফাইল</span></h2>
+    <table>
+      <thead><tr><th><span class="en">Field</span><span class="bn">ঘর</span></th><th><span class="en">Notes</span><span class="bn">নোট</span></th></tr></thead>
+      <tbody>
+        <tr><td><span class="en">Farmer / Village name</span><span class="bn">কৃষক / গ্রামের নাম</span></td><td><span class="en">Identifies the record.</span><span class="bn">রেকর্ড শনাক্ত করে।</span></td></tr>
+        <tr><td><span class="en">Rice Variety</span><span class="bn">ধানের জাত</span></td><td><span class="en">e.g. BRRI dhan50, Rod miniket.</span><span class="bn">যেমন ব্রি ধান৫০, রড মিনিকেট।</span></td></tr>
+        <tr><td><span class="en">Field Size + unit</span><span class="bn">জমির আকার + একক</span></td><td><span class="en">Choose the unit (ha, bigha, etc.); values convert automatically.</span><span class="bn">একক নির্বাচন করুন (হেক্টর, বিঘা ইত্যাদি); মান নিজে থেকে রূপান্তরিত হয়।</span></td></tr>
+        <tr><td><span class="en">GPS Coordinates</span><span class="bn">GPS স্থানাঙ্ক</span></td><td><span class="en">📍 gets your current location, 🗺️ opens Google Maps, ↺ clears it. Needed for the DAE map.</span><span class="bn">📍 বর্তমান অবস্থান নেয়, 🗺️ গুগল ম্যাপ খোলে, ↺ মুছে দেয়। DAE মানচিত্রের জন্য দরকার।</span></td></tr>
+        <tr><td><span class="en">Shared Drive Link</span><span class="bn">শেয়ার্ড ড্রাইভ লিংক</span></td><td><span class="en">Optional link (e.g. Google Drive) for extra field files.</span><span class="bn">ঐচ্ছিক লিংক (যেমন গুগল ড্রাইভ) অতিরিক্ত ফাইলের জন্য।</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 8 SETTINGS -->
+  <section id="settings">
+    <h2><span class="num">8</span><span class="en">1. Basic settings &amp; the two modes</span><span class="bn">1. মৌলিক সেটিংস ও দুটি মোড</span></h2>
+    <p class="en">The app calculates dates from adjustable “offsets” (numbers of days). There are two setups:</p>
+    <p class="bn">অ্যাপটি সমন্বয়যোগ্য “অফসেট” (দিনের সংখ্যা) থেকে তারিখ হিসাব করে। দুটি সেটআপ আছে:</p>
+    <div class="two">
+      <div>
+        <h3 class="en">Simple Mode</h3><h3 class="bn">সহজ মোড</h3>
+        <p class="en">A short list of the most important numbers: MD start, MD duration, pre-3F4D flooding start (from sowing or transplanting), flooding duration, and Heading day after sowing. Best for daily field use.</p>
+        <p class="bn">সবচেয়ে গুরুত্বপূর্ণ কয়েকটি সংখ্যা: MD শুরু, MD সময়কাল, ৩এফ৪ডি-পূর্ব প্লাবন শুরু (বপন বা রোপণ থেকে), প্লাবন সময়কাল এবং বপনের পর শীষ আসার দিন। মাঠে দৈনন্দিন ব্যবহারের জন্য সেরা।</p>
+      </div>
+      <div>
+        <h3 class="en">Professional Mode</h3><h3 class="bn">প্রফেশনাল মোড</h3>
+        <p class="en">Every offset is exposed (Pitan, Panicle-Initiation check, flooding before heading, 3F4D start before heading, harvest, etc.), plus Audio and the DAE Dashboard.</p>
+        <p class="bn">প্রতিটি অফসেট দেখা যায় (পিতান, শীষ-গঠন পরীক্ষা, শীষের আগে প্লাবন, শীষের আগে ৩এফ৪ডি শুরু, ফসল কাটা ইত্যাদি), সাথে Audio ও DAE Dashboard।</p>
+      </div>
+    </div>
+    <div class="callout"><span class="en">Simple and Professional keep <b>separate</b> Heading/other values, so changing one mode does not silently change the other. The ↺ button resets any single number to its default.</span>
+      <span class="bn">Simple ও Professional-এর মান <b>আলাদা</b> থাকে, তাই এক মোড বদলালে অন্যটি নিঃশব্দে বদলায় না। ↺ বোতাম যেকোনো একটি সংখ্যা ডিফল্টে ফেরায়।</span></div>
+  </section>
+
+  <!-- 9 DATES -->
+  <section id="dates">
+    <h2><span class="num">9</span><span class="en">2. Date Settings &amp; automatic calculation</span><span class="bn">2. তারিখ ও স্বয়ংক্রিয় হিসাব</span></h2>
+    <p class="en">Enter one anchor date and the app fills the rest. The usual anchor is <b>Sowing</b> (Transplanting = Sowing + ~35–40 days). You can also enter Transplanting or Heading and it works backwards.</p>
+    <p class="bn">একটি মূল তারিখ দিন, বাকি সব অ্যাপ পূরণ করবে। সাধারণ মূল তারিখ <b>Sowing</b> (Transplanting = Sowing + ~৩৫–৪০ দিন)। Transplanting বা Heading দিলেও উল্টো হিসাব করে।</p>
+    <h3><span class="en">Manual override &amp; lock</span><span class="bn">হাতে পরিবর্তন ও লক</span></h3>
+    <ul>
+      <li class="en">Type into any date to override the calculated value. That box turns <b>yellow</b> and is now “locked” (🔒) — the app will no longer recompute it.</li>
+      <li class="bn">যেকোনো তারিখে টাইপ করলে হিসাব করা মান বদলে যায়। ঘরটি <b>হলুদ</b> হয় ও “লক” (🔒) হয়ে যায় — অ্যাপ আর তা নতুন করে হিসাব করবে না।</li>
+      <li class="en">To release it, use ↺ next to the box, or <b>Reset Farmer</b> to clear all manual dates for that farmer.</li>
+      <li class="bn">মুক্ত করতে ঘরের পাশের ↺ ব্যবহার করুন, অথবা <b>Reset Farmer</b> দিয়ে ঐ কৃষকের সব হাতে-দেওয়া তারিখ মুছুন।</li>
+    </ul>
+    <div class="callout warn">
+      <span class="tag en">The red “! Order” badge</span><span class="tag bn">লাল “! Order” ব্যাজ</span>
+      <span class="en">This appears when a row's date is <b>earlier</b> than the row above it — the sequence is out of order. Usually a manually-locked date (often Heading) is left at an old value. Fix the highlighted date, or press ↺ / Reset Farmer to recalculate.</span>
+      <span class="bn">যখন কোনো সারির তারিখ তার উপরের সারির চেয়ে <b>আগের</b> হয়—ক্রম এলোমেলো—তখন এটি আসে। সাধারণত হাতে-লক করা একটি তারিখ (প্রায়ই Heading) পুরোনো মানে থেকে যায়। হাইলাইট করা তারিখ ঠিক করুন, অথবা ↺ / Reset Farmer চেপে পুনরায় হিসাব করুন।</span>
+    </div>
+    <h3><span class="en">Young Panicle (1–2 mm)</span><span class="bn">কচি শীষ (১–২ মিমি)</span></h3>
+    <p class="en">If you turn on the YP option and enter the date you actually observed a 1–2 mm young panicle, the flooding start uses your real observation instead of the estimate — more accurate for arsenic reduction.</p>
+    <p class="bn">YP অপশন চালু করে বাস্তবে ১–২ মিমি কচি শীষ দেখা তারিখ দিলে, প্লাবন শুরু অনুমানের বদলে আপনার বাস্তব পর্যবেক্ষণ ব্যবহার করে — আর্সেনিক কমাতে বেশি নির্ভুল।</p>
+    <table>
+      <thead><tr><th><span class="en">Colour</span><span class="bn">রং</span></th><th><span class="en">Stage</span><span class="bn">ধাপ</span></th></tr></thead>
+      <tbody>
+        <tr><td><span class="pill base">■</span></td><td><span class="en">Base (sowing, transplanting, harvest…)</span><span class="bn">মূল (বপন, রোপণ, ফসল কাটা…)</span></td></tr>
+        <tr><td><span class="pill pitan">■</span></td><td><span class="en">Pitan</span><span class="bn">পিতান</span></td></tr>
+        <tr><td><span class="pill md">■</span></td><td><span class="en">Mid-season Drainage</span><span class="bn">মধ্য-মৌসুম নিকাশ</span></td></tr>
+        <tr><td><span class="pill f3d">■</span></td><td><span class="en">3F4D cycles</span><span class="bn">৩এফ৪ডি চক্র</span></td></tr>
+        <tr><td><span class="pill head">■</span></td><td><span class="en">Heading</span><span class="bn">শীষ আসা</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 10 VIEWS -->
+  <section id="views">
+    <h2><span class="num">10</span><span class="en">The five views</span><span class="bn">পাঁচটি ভিউ</span></h2>
+    <table>
+      <thead><tr><th><span class="en">Tab</span><span class="bn">ট্যাব</span></th><th><span class="en">Use</span><span class="bn">ব্যবহার</span></th></tr></thead>
+      <tbody>
+        <tr><td><b>Table List</b></td><td><span class="en">Every event with date, Bengali date, and a Done checkbox. The green <b>CSV</b> button exports this table.</span><span class="bn">প্রতিটি ইভেন্ট তারিখ, বাংলা তারিখ ও Done চেকবক্সসহ। সবুজ <b>CSV</b> বোতাম এই টেবিল এক্সপোর্ট করে।</span></td></tr>
+        <tr><td><b>Calendar View</b></td><td><span class="en">A month calendar with colour-coded events, flood/drain bands, notes 📝 and photos 📷.</span><span class="bn">রঙিন ইভেন্ট, প্লাবন/নিকাশ ব্যান্ড, নোট 📝 ও ছবি 📷 সহ মাসিক ক্যালেন্ডার।</span></td></tr>
+        <tr><td><b>Irrigation Plan Map</b></td><td><span class="en">A picture of the water plan with the key dates marked; can be downloaded as an image.</span><span class="bn">মূল তারিখসহ পানি পরিকল্পনার ছবি; ছবি হিসেবে ডাউনলোড করা যায়।</span></td></tr>
+        <tr><td><b>Irrigation Time</b></td><td><span class="en">A graph of recorded irrigation minutes/hours; export as CSV or PDF.</span><span class="bn">রেকর্ড করা সেচের মিনিট/ঘণ্টার গ্রাফ; CSV বা PDF এক্সপোর্ট।</span></td></tr>
+        <tr><td><b>Notes Log</b></td><td><span class="en">All your dated notes, photos and irrigation entries in one list.</span><span class="bn">আপনার সব তারিখ-ভিত্তিক নোট, ছবি ও সেচ এন্ট্রি এক তালিকায়।</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 11 RECORD -->
+  <section id="record">
+    <h2><span class="num">11</span><span class="en">Recording progress</span><span class="bn">অগ্রগতি রেকর্ড করা</span></h2>
+    <ul>
+      <li class="en"><b>Mark done:</b> tick the checkbox on a Table row when a task is completed.</li>
+      <li class="bn"><b>সম্পন্ন চিহ্নিত:</b> কাজ শেষ হলে টেবিল সারির চেকবক্সে টিক দিন।</li>
+      <li class="en"><b>Add a note / photo / irrigation time:</b> tap a date in the Calendar to open the Note box. Photos are automatically resized to save space.</li>
+      <li class="bn"><b>নোট / ছবি / সেচের সময় যোগ:</b> ক্যালেন্ডারে একটি তারিখে চাপ দিয়ে Note বক্স খুলুন। জায়গা বাঁচাতে ছবি নিজে থেকে ছোট হয়।</li>
+      <li class="en"><b>Irrigation time:</b> enter minutes or hours; it feeds the Irrigation Time graph.</li>
+      <li class="bn"><b>সেচের সময়:</b> মিনিট বা ঘণ্টা দিন; এটি Irrigation Time গ্রাফে যায়।</li>
+    </ul>
+    <div class="callout warn"><span class="en">Photos stay <b>only on this phone</b> (they are not sent by team sync). Use ⚙️ → Backup or a Shared Drive link to keep copies.</span><span class="bn">ছবি <b>শুধু এই ফোনে</b> থাকে (টিম সিঙ্কে যায় না)। কপি রাখতে ⚙️ → Backup বা Shared Drive লিংক ব্যবহার করুন।</span></div>
+  </section>
+
+  <!-- 12 NOTIFY -->
+  <section id="notify">
+    <h2><span class="num">12</span><span class="en">Today's tasks &amp; notifications</span><span class="bn">আজকের কাজ ও নোটিফিকেশন</span></h2>
+    <ul>
+      <li class="en">The yellow banner and the tab badges (red “!”, 💧) always show what is due <b>today</b> across all farmers.</li>
+      <li class="bn">হলুদ ব্যানার ও ট্যাব ব্যাজ (লাল “!”, 💧) সব কৃষকের <b>আজকের</b> কাজ দেখায়।</li>
+      <li class="en">Turn on phone notifications with <b>⚙️ → Send Test Notification</b> (allow when asked). After that, the app shows today's and tomorrow's tasks as notifications when you open it.</li>
+      <li class="bn"><b>⚙️ → Send Test Notification</b> দিয়ে ফোন নোটিফিকেশন চালু করুন (জিজ্ঞেস করলে অনুমতি দিন)। এরপর অ্যাপ খুললে আজ ও আগামীকালের কাজ নোটিফিকেশনে দেখাবে।</li>
+    </ul>
+    <div class="callout"><span class="en">Notifications are generated on the phone when the app opens; they are reminders, not server push. Open the app regularly (or keep it installed) so reminders appear.</span><span class="bn">অ্যাপ খুললে ফোনেই নোটিফিকেশন তৈরি হয়; এগুলো রিমাইন্ডার, সার্ভার পুশ নয়। নিয়মিত অ্যাপ খুলুন (বা ইনস্টল রাখুন) যাতে রিমাইন্ডার আসে।</span></div>
+  </section>
+
+  <!-- 13 WEATHER -->
+  <section id="weather">
+    <h2><span class="num">13</span><span class="en">Weather</span><span class="bn">আবহাওয়া</span></h2>
+    <p class="en">When a field has GPS coordinates, the app shows a short local forecast (temperature and rain). Use it to plan drain/flood days around rain — for example, avoid flooding just before heavy rain. Internet is required to refresh the forecast.</p>
+    <p class="bn">জমিতে GPS দিলে অ্যাপ স্থানীয় সংক্ষিপ্ত পূর্বাভাস (তাপমাত্রা ও বৃষ্টি) দেখায়। বৃষ্টির আশপাশে নিকাশ/প্লাবন দিন পরিকল্পনা করুন — যেমন ভারী বৃষ্টির ঠিক আগে প্লাবন এড়ান। পূর্বাভাস রিফ্রেশে ইন্টারনেট লাগে।</p>
+  </section>
+
+  <!-- 14 PRO TOOLS -->
+  <section id="pro">
+    <h2><span class="num">14</span><span class="en">Professional tools</span><span class="bn">প্রফেশনাল টুলস</span></h2>
+    <p class="mini en">Switch the mode selector to <b>Professional</b> to reveal these.</p>
+    <p class="mini bn">এগুলো দেখতে মোড সিলেক্টর <b>Professional</b>-এ নিন।</p>
+    <h3>🔊 <span class="en">Audio schedule</span><span class="bn">অডিও সময়সূচী</span></h3>
+    <p class="en">Reads the current farmer's schedule aloud in English or Bengali. Useful for farmers who prefer listening. Tap again to stop.</p>
+    <p class="bn">বর্তমান কৃষকের সময়সূচী ইংরেজি বা বাংলায় পড়ে শোনায়। শুনতে পছন্দ করা কৃষকদের জন্য উপকারী। থামাতে আবার চাপুন।</p>
+    <h3>🗺️ <span class="en">DAE Dashboard</span><span class="bn">DAE ড্যাশবোর্ড</span></h3>
+    <p class="en">A map (OpenStreetMap) with a pin for every farmer that has GPS coordinates — a quick overview of all fields. <b>Export CSV</b> downloads a summary table (name, village, variety, size, key dates) for reporting.</p>
+    <p class="bn">GPS আছে এমন প্রতিটি কৃষকের জন্য পিনসহ একটি মানচিত্র (OpenStreetMap) — সব জমির দ্রুত সারসংক্ষেপ। <b>Export CSV</b> রিপোর্টের জন্য একটি সারণি (নাম, গ্রাম, জাত, আকার, মূল তারিখ) ডাউনলোড করে।</p>
+  </section>
+
+  <!-- 15 BACKUP -->
+  <section id="backup">
+    <h2><span class="num">15</span><span class="en">Backup &amp; Export</span><span class="bn">ব্যাকআপ ও এক্সপোর্ট</span></h2>
+    <table>
+      <thead><tr><th><span class="en">⚙️ item</span><span class="bn">⚙️ আইটেম</span></th><th><span class="en">Result</span><span class="bn">ফলাফল</span></th></tr></thead>
+      <tbody>
+        <tr><td><b>Backup All / Current (JSON)</b></td><td><span class="en">Saves a data file (all farmers, or just the current one). Keep it safe — this is your real backup.</span><span class="bn">একটি ডেটা ফাইল সংরক্ষণ করে (সব কৃষক, বা শুধু বর্তমান)। নিরাপদে রাখুন — এটিই আসল ব্যাকআপ।</span></td></tr>
+        <tr><td><b>Import JSON</b></td><td><span class="en">Restores data from a backup file (replaces current data).</span><span class="bn">ব্যাকআপ ফাইল থেকে ডেটা ফেরায় (বর্তমান ডেটা প্রতিস্থাপন করে)।</span></td></tr>
+        <tr><td><b>Export PDF Report</b></td><td><span class="en">A printable schedule report for the current farmer.</span><span class="bn">বর্তমান কৃষকের প্রিন্টযোগ্য সময়সূচী রিপোর্ট।</span></td></tr>
+        <tr><td><b>Export Calendar PDF</b></td><td><span class="en">The calendar as a PDF.</span><span class="bn">ক্যালেন্ডার PDF হিসেবে।</span></td></tr>
+        <tr><td><b>CSV</b> <span class="mini">(Table view)</span></td><td><span class="en">The schedule table as a spreadsheet file.</span><span class="bn">সময়সূচী টেবিল স্প্রেডশিট ফাইল হিসেবে।</span></td></tr>
+      </tbody>
+    </table>
+    <div class="callout danger"><span class="tag en">Important</span><span class="tag bn">গুরুত্বপূর্ণ</span>
+      <span class="en">Make a JSON backup regularly. If the phone is lost or the browser data is cleared, data that was never backed up (and never synced) cannot be recovered.</span>
+      <span class="bn">নিয়মিত JSON ব্যাকআপ নিন। ফোন হারালে বা ব্রাউজার ডেটা মুছে গেলে, যে ডেটা কখনো ব্যাকআপ (বা সিঙ্ক) হয়নি তা ফেরানো যায় না।</span></div>
+  </section>
+
+  <!-- 16 SYNC -->
+  <section id="sync">
+    <h2><span class="num">16</span><span class="en">Team Sync (optional)</span><span class="bn">টিম সিঙ্ক (ঐচ্ছিক)</span></h2>
+    <p class="en">Several workers can share the same farmer list by using the same <b>Group ID</b> (a shared password). Open <b>⚙️ → Admin / Sync</b>, log in, and enter your Group ID.</p>
+    <p class="bn">একই <b>Group ID</b> (শেয়ার্ড পাসওয়ার্ড) ব্যবহার করে কয়েকজন কর্মী একই কৃষক তালিকা শেয়ার করতে পারেন। <b>⚙️ → Admin / Sync</b> খুলে লগইন করে Group ID দিন।</p>
+    <ul>
+      <li class="en">Farmer records sync automatically between devices in the same group.</li>
+      <li class="bn">একই গ্রুপের ডিভাইসগুলোর মধ্যে কৃষক রেকর্ড নিজে থেকে সিঙ্ক হয়।</li>
+      <li class="en"><b>Photos are not synced</b> (they stay on each phone) to keep sync fast and reliable.</li>
+      <li class="bn"><b>ছবি সিঙ্ক হয় না</b> (প্রতিটি ফোনে থাকে) — যাতে সিঙ্ক দ্রুত ও নির্ভরযোগ্য থাকে।</li>
+      <li class="en">Keep all team devices on the <b>same app version</b>; update them together.</li>
+      <li class="bn">টিমের সব ডিভাইস <b>একই অ্যাপ সংস্করণে</b> রাখুন; একসাথে আপডেট করুন।</li>
+    </ul>
+    <div class="callout warn"><span class="en">The Group ID is a light sharing key, not strong security. Do not store sensitive personal data you would not share within the team.</span><span class="bn">Group ID একটি হালকা শেয়ারিং কী, শক্ত নিরাপত্তা নয়। টিমে শেয়ার করতে চান না এমন সংবেদনশীল ব্যক্তিগত তথ্য রাখবেন না।</span></div>
+  </section>
+
+  <!-- 17 UPDATE -->
+  <section id="update">
+    <h2><span class="num">17</span><span class="en">Updating &amp; data safety</span><span class="bn">আপডেট ও ডেটা সুরক্ষা</span></h2>
+    <ul>
+      <li class="en"><b>Updates:</b> when connected to the internet, the app loads its newest version automatically the next time you open it. If you suspect an old version, close and reopen it online.</li>
+      <li class="bn"><b>আপডেট:</b> ইন্টারনেট থাকলে পরেরবার খোলার সময় অ্যাপ নিজে থেকে নতুন সংস্করণ লোড করে। পুরোনো মনে হলে অনলাইনে বন্ধ করে আবার খুলুন।</li>
+      <li class="en"><b>Where data lives:</b> on this phone's browser storage. Clearing browser data / uninstalling removes it — back up first.</li>
+      <li class="bn"><b>ডেটা কোথায়:</b> এই ফোনের ব্রাউজার স্টোরেজে। ব্রাউজার ডেটা মোছা / আনইনস্টল করলে চলে যায় — আগে ব্যাকআপ নিন।</li>
+      <li class="en"><b>Updating never deletes your data</b>, but a backup before big changes is always wise.</li>
+      <li class="bn"><b>আপডেটে আপনার ডেটা মোছে না</b>, তবে বড় পরিবর্তনের আগে ব্যাকআপ নেওয়া বুদ্ধিমানের কাজ।</li>
+    </ul>
+  </section>
+
+  <!-- 18 FAQ -->
+  <section id="faq">
+    <h2><span class="num">18</span><span class="en">Troubleshooting / FAQ</span><span class="bn">সমস্যা সমাধান</span></h2>
+
+    <h3><span class="en">A red “! Order” badge appears</span><span class="bn">লাল “! Order” ব্যাজ দেখা যায়</span></h3>
+    <p class="en">A date is earlier than the one above it. A manually-locked date (often Heading) is probably outdated. Correct the highlighted date, or press ↺ next to it / use Reset Farmer.</p>
+    <p class="bn">কোনো তারিখ তার উপরেরটির চেয়ে আগের। সম্ভবত হাতে-লক করা তারিখ (প্রায়ই Heading) পুরোনো। হাইলাইট করা তারিখ ঠিক করুন, বা পাশের ↺ / Reset Farmer ব্যবহার করুন।</p>
+
+    <h3><span class="en">My changes to a date keep disappearing / not updating</span><span class="bn">তারিখের পরিবর্তন মিলিয়ে যাচ্ছে / আপডেট হচ্ছে না</span></h3>
+    <p class="en">A yellow (locked 🔒) date is fixed by you and won't recalculate; a normal date recalculates from the anchor date. Use ↺ to switch a locked date back to automatic.</p>
+    <p class="bn">হলুদ (লক 🔒) তারিখ আপনি স্থির করেছেন, পুনরায় হিসাব হয় না; সাধারণ তারিখ মূল তারিখ থেকে পুনরায় হিসাব হয়। লক তারিখ স্বয়ংক্রিয়ে ফেরাতে ↺ ব্যবহার করুন।</p>
+
+    <h3><span class="en">I don't see a recent change to the app</span><span class="bn">অ্যাপের সাম্প্রতিক পরিবর্তন দেখছি না</span></h3>
+    <p class="en">Open the app while online and reopen it once; the newest version loads automatically.</p>
+    <p class="bn">অনলাইন অবস্থায় অ্যাপ খুলে একবার আবার খুলুন; নতুন সংস্করণ নিজে থেকে লোড হয়।</p>
+
+    <h3><span class="en">Notifications don't appear</span><span class="bn">নোটিফিকেশন আসে না</span></h3>
+    <p class="en">Run ⚙️ → Send Test Notification and allow permission. On iPhone you must Add to Home Screen first and open the app from that icon.</p>
+    <p class="bn">⚙️ → Send Test Notification চালিয়ে অনুমতি দিন। আইফোনে আগে Add to Home Screen করে সেই আইকন থেকে অ্যাপ খুলতে হবে।</p>
+
+    <h3><span class="en">Weather / map is blank</span><span class="bn">আবহাওয়া / মানচিত্র ফাঁকা</span></h3>
+    <p class="en">These need internet and a valid GPS coordinate in the Field Profile. Add coordinates with 📍 and reconnect.</p>
+    <p class="bn">এগুলোর জন্য ইন্টারনেট ও Field Profile-এ সঠিক GPS দরকার। 📍 দিয়ে স্থানাঙ্ক যোগ করে আবার সংযুক্ত হন।</p>
+  </section>
+
+  <div class="callout no-print" style="text-align:center">
+    <a class="btn primary" href="./index.html">↩︎ <span class="en">Back to the App</span><span class="bn">অ্যাপে ফিরুন</span></a>
+  </div>
+
+</main>
+
+<footer>
+  <p class="en">3F4D+MD Pro is developed by Takehiro Kamiya (University of Tokyo), under a JICA/JST project. Use this application at your own risk.</p>
+  <p class="bn">৩এফ৪ডি+এমডি প্রো তৈরি করেছেন তাকেহিরো কামিয়া (টোকিও বিশ্ববিদ্যালয়), JICA/JST প্রকল্পের আওতায়। নিজ দায়িত্বে ব্যবহার করুন।</p>
+  <p class="mini">Manual v1 · <span class="en">Applies to the 3F4D+MD Pro web app (Simple &amp; Professional modes).</span><span class="bn">৩এফ৪ডি+এমডি প্রো ওয়েব অ্যাপের জন্য (Simple ও Professional মোড)।</span></p>
+</footer>
+
+<script>
+  function setLang(l){
+    document.body.classList.remove('lang-en','lang-bn');
+    document.body.classList.add('lang-'+l);
+    document.documentElement.lang = l;
+    document.querySelectorAll('.lang-btn').forEach(b=>{
+      b.classList.toggle('active', b.dataset.lang===l);
+    });
+    try{ localStorage.setItem('manual_lang', l); }catch(e){}
+  }
+  (function(){
+    var saved='en';
+    try{ saved = localStorage.getItem('manual_lang') || 'en'; }catch(e){}
+    setLang(saved);
+  })();
+</script>
+</body>
+</html>

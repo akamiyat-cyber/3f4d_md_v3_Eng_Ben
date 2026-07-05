@@ -1,6 +1,6 @@
 // キャッシュの名前（バージョン管理用）
 // 注意: index.html を更新して配布するときは、このバージョン番号も上げること
-const CACHE_NAME = 'f3d-pro-scheduler-v7';
+const CACHE_NAME = 'f3d-pro-scheduler-v8';
 
 // オフラインで利用可能にするファイルのリスト
 const ASSETS_TO_CACHE = [
@@ -9,6 +9,7 @@ const ASSETS_TO_CACHE = [
   './manifest.json',
   './slide_en_water.png',
   './icon.png',      // アイコン画像
+  './manual/manual.html', // マニュアル
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
   'https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js',
