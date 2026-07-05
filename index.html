@@ -1821,7 +1821,7 @@ function refreshViews() {
         }
         
         let actionsHtml = "";
-        if (currentMode === 'professional' && (k.id === 'md_start' || k.id.includes('flood_start') || k.id === 'sm_md_start' || k.id === 'sm_flood_start')) {
+        if (currentMode === 'professional') {
             const smsBody = encodeURIComponent(`Reminder: ${t(k.id)} is scheduled for ${benDate} (${val}).`);
             actionsHtml = `<br><a href="sms:?body=${smsBody}" class="text-decoration-none me-1" title="Send SMS">📱</a><a href="https://wa.me/?text=${smsBody}" target="_blank" class="text-decoration-none" title="Send WhatsApp">💬</a>`;
         }
