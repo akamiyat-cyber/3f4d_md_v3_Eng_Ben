@@ -1153,7 +1153,7 @@ function changeMode(mode) {
     }
     
     document.querySelectorAll('.prof-only').forEach(el => {
-        el.style.display = (mode === 'prof') ? '' : 'none';
+        el.style.display = (mode === 'professional') ? '' : 'none';
     });
     
     recalculate('all');
@@ -1821,7 +1821,7 @@ function refreshViews() {
         }
         
         let actionsHtml = "";
-        if (currentMode === 'prof' && (k.id === 'md_start' || k.id.includes('flood_start') || k.id === 'sm_md_start' || k.id === 'sm_flood_start')) {
+        if (currentMode === 'professional' && (k.id === 'md_start' || k.id.includes('flood_start') || k.id === 'sm_md_start' || k.id === 'sm_flood_start')) {
             const smsBody = encodeURIComponent(`Reminder: ${t(k.id)} is scheduled for ${benDate} (${val}).`);
             actionsHtml = `<br><a href="sms:?body=${smsBody}" class="text-decoration-none me-1" title="Send SMS">📱</a><a href="https://wa.me/?text=${smsBody}" target="_blank" class="text-decoration-none" title="Send WhatsApp">💬</a>`;
         }
@@ -2981,7 +2981,7 @@ async function fetchWeather(coordsStr) {
                 if (mdStart && mdEnd && dateObj >= mdStart && dateObj <= mdEnd && rain > 5) mdWarning = true;
                 if (floodStart && floodEnd && dateObj >= floodStart && dateObj <= floodEnd && maxT > 35) floodWarning = true;
             }
-            if (alertsContainer && currentMode === 'prof') {
+            if (alertsContainer && currentMode === 'professional') {
                 if (mdWarning) alertsContainer.innerHTML += `<div class="alert alert-warning py-2 mb-2" style="font-size:0.8rem;">⚠️ <b>Weather Alert:</b> Heavy rain expected during Mid-Season Drainage.</div>`;
                 if (floodWarning) alertsContainer.innerHTML += `<div class="alert alert-danger py-2 mb-2" style="font-size:0.8rem;">🔥 <b>Weather Alert:</b> Extreme heat (>35°C) expected during Flooding.</div>`;
             }
