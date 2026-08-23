@@ -332,16 +332,6 @@
         @keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 50% { box-shadow: 0 0 0 5px rgba(245,158,11,0); } }
         .streak-badge { font-size: 0.72rem; font-weight: 700; color: #b45309; background: #fef3c7; border-radius: 20px; padding: 2px 10px; }
 
-        .mental-accounts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        @media (max-width: 576px) { .mental-accounts { grid-template-columns: 1fr; } }
-        .account-card { border-radius: var(--radius-md); padding: 12px 14px; text-align: left; }
-        .account-card .account-icon { font-size: 1.1rem; }
-        .account-card .account-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.8; }
-        .account-card .account-value { font-size: 1.05rem; font-weight: 800; margin-top: 2px; }
-        .account-card.cost { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-        .account-card.yield { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-        .account-card.health { background: #fdf4ff; color: #86198f; border: 1px solid #f5d0fe; }
-
         .loss-frame-alert { border-radius: var(--radius-md); padding: 12px 16px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 0.85rem; }
         .loss-frame-alert b { color: #7f1d1d; }
 
@@ -1125,13 +1115,6 @@ const TRANSLATIONS = {
         pledge_prompt_text: "Make a season pledge: commit to completing the full 3F4D+MD schedule.",
         pledge_cta: "I commit",
         progress_title: "3F4D cycles completed",
-        acct_cost: "Irrigation cost saved",
-        acct_yield: "Yield protected",
-        acct_health: "Arsenic reduction",
-        acct_health_done: "Done this season",
-        acct_health_pending: "Not yet done",
-        acct_currency: "Tk (est.)",
-        acct_disclaimer: "Estimates based on typical values, not a measurement of your field — for motivation only.",
         loss_title: "Missed water-saving window:",
         loss_body: "{n} drainage cycle(s) passed their date without being marked done — an estimated {cost} Tk in irrigation savings may have been missed.",
         social_proof_md_label: "started MD",
@@ -1246,13 +1229,6 @@ const TRANSLATIONS = {
         pledge_prompt_text: "মৌসুমের অঙ্গীকার করুন: সম্পূর্ণ ৩এফ৪ডি+এমডি সময়সূচী মেনে চলার প্রতিশ্রুতি দিন।",
         pledge_cta: "আমি অঙ্গীকার করছি",
         progress_title: "সম্পন্ন ৩এফ৪ডি চক্র",
-        acct_cost: "সেচ খরচে সাশ্রয়",
-        acct_yield: "সুরক্ষিত ফলন",
-        acct_health: "আর্সেনিক হ্রাস",
-        acct_health_done: "এই মৌসুমে সম্পন্ন",
-        acct_health_pending: "এখনো সম্পন্ন হয়নি",
-        acct_currency: "টাকা (আনুমানিক)",
-        acct_disclaimer: "সাধারণ মানের উপর ভিত্তি করে আনুমানিক হিসাব, আপনার জমির প্রকৃত পরিমাপ নয় — শুধু অনুপ্রেরণার জন্য।",
         loss_title: "পানি সাশ্রয়ের সুযোগ হাতছাড়া:",
         loss_body: "{n}টি নিকাশ চক্র তারিখ পার হওয়ার পরও সম্পন্ন চিহ্নিত হয়নি — আনুমানিক {cost} টাকার সেচ সাশ্রয় হাতছাড়া হতে পারে।",
         social_proof_md_label: "এমডি শুরু করেছেন",
@@ -1912,14 +1888,11 @@ function isValidDateKey(s) {
     return /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
-// --- Behavioral design panel: pledge, progress, mental accounts, loss-frame ---
-// These figures are deliberately simple, order-of-magnitude economics used to
-// make the abstract benefits of the 3F4D+MD schedule concrete and easy to
-// frame as a loss. They are estimates for motivation, not engineering figures,
-// and are always labelled as such in the UI.
+// --- Behavioral design panel: pledge, progress, loss-frame ---
+// The loss-frame figure below is a deliberately simple, order-of-magnitude
+// estimate used to make a missed cycle concrete, not an engineering figure.
 const BEHAVIOR_ECON = {
-    costPerDrainDay: 60,           // approx. Tk saved per day of drainage vs. continuous flooding
-    yieldProtectPct: 8,            // approx. % yield protected by completing MD on time
+    costPerDrainDay: 60,           // approx. Tk of irrigation savings used in the loss-frame alert below
     conventionalIrrMinPerDay: 90   // approx. daily irrigation minutes under continuous flooding (anchor/reference line)
 };
 
@@ -1964,7 +1937,6 @@ function renderBehaviorPanel() {
     //    so a single missed week doesn't erase the farmer's sense of progress)
     const cycles = getCycleStatus(f, todayStr);
     const doneCount = cycles.filter(c => c.done).length;
-    const mdDone = !!(f.completed && f.completed.includes('md_start'));
     const dotsHtml = cycles.map((c, i) => {
         const label = escapeHtml(t('f3d' + (i + 1)) + (c.date ? ' (' + c.date + ')' : ''));
         return `<span class="cycle-dot ${c.state}" title="${label}">${c.done ? '✓' : (i + 1)}</span>`;
@@ -1978,19 +1950,7 @@ function renderBehaviorPanel() {
         <div class="cycle-dots">${dotsHtml}</div>
     </div>`;
 
-    // 3) Mental accounting: split the single "benefit" into 3 separate accounts
-    const mdDurUsed = parseInt((currentMode === 'simple' ? f.settings.sm_md_dur : f.settings.md_dur) || 8) || 8;
-    const drainDaysDone = doneCount * 4 + (mdDone ? mdDurUsed : 0);
-    const costSaved = drainDaysDone * BEHAVIOR_ECON.costPerDrainDay;
-    const floodDone = !!(f.completed && f.completed.includes('pi_flood_start'));
-    const accountsHtml = `<div class="mental-accounts">
-        <div class="account-card cost"><div class="account-icon">💰</div><div class="account-label">${t('acct_cost')}</div><div class="account-value">${costSaved.toLocaleString()} ${t('acct_currency')}</div></div>
-        <div class="account-card yield"><div class="account-icon">🌾</div><div class="account-label">${t('acct_yield')}</div><div class="account-value">${mdDone ? '+' + BEHAVIOR_ECON.yieldProtectPct + '%' : '—'}</div></div>
-        <div class="account-card health"><div class="account-icon">🩺</div><div class="account-label">${t('acct_health')}</div><div class="account-value">${floodDone ? t('acct_health_done') : t('acct_health_pending')}</div></div>
-    </div>
-    <div class="text-muted" style="font-size:0.68rem;">${t('acct_disclaimer')}</div>`;
-
-    // 4) Loss-frame alert: overdue cycles (past date, not marked done) shown as
+    // 3) Loss-frame alert: overdue cycles (past date, not marked done) shown as
     //    what is being lost, not what could be gained — loss aversion.
     const overdueCycles = cycles.filter(c => c.state === 'due');
     let lossHtml = "";
@@ -1999,7 +1959,7 @@ function renderBehaviorPanel() {
         lossHtml = `<div class="loss-frame-alert">⚠️ <b>${t('loss_title')}</b> ${t('loss_body').replace('{n}', overdueCycles.length).replace('{cost}', missedCost.toLocaleString())}</div>`;
     }
 
-    panel.innerHTML = [pledgeHtml, progressHtml, accountsHtml, lossHtml].filter(Boolean).join('');
+    panel.innerHTML = [pledgeHtml, progressHtml, lossHtml].filter(Boolean).join('');
 }
 
 function refreshViews() {
