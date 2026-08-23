@@ -311,6 +311,32 @@
         .gallery-item img { width: 100%; height: 85px; object-fit: cover; border-radius: 4px; }
         .gallery-info { font-size: 0.75rem; color: #64748b; margin-top: 5px; font-weight: 500; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 
+        /* --- Behavioral design panel (nudges, feedback, framing) --- */
+        #behavior-panel { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
+
+        .pledge-banner { border-radius: var(--radius-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .pledge-banner.unpledged { background: #fffbeb; border: 1px solid #fde68a; }
+        .pledge-banner.pledged { background: #ecfdf5; border: 1px solid #a7f3d0; }
+        .pledge-banner .pledge-text { font-size: 0.85rem; font-weight: 600; color: #334155; }
+        .pledge-banner.pledged .pledge-text { color: #065f46; }
+
+        .progress-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-soft); }
+        .progress-card .progress-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+        .progress-card .progress-title { font-size: 0.85rem; font-weight: 700; color: #334155; }
+        .progress-card .progress-count { font-family: ui-monospace, monospace; font-weight: 700; color: var(--brand-primary); }
+        .cycle-dots { display: flex; gap: 6px; margin-top: 8px; }
+        .cycle-dot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; border: 2px solid #e2e8f0; color: #94a3b8; background: #f8fafc; }
+        .cycle-dot.done { background: var(--brand-primary); border-color: var(--brand-primary); color: #fff; }
+        .cycle-dot.due { border-color: #f59e0b; color: #b45309; background: #fffbeb; animation: pulse-dot 2s infinite; }
+        .cycle-dot.future { opacity: 0.55; }
+        @keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 50% { box-shadow: 0 0 0 5px rgba(245,158,11,0); } }
+        .streak-badge { font-size: 0.72rem; font-weight: 700; color: #b45309; background: #fef3c7; border-radius: 20px; padding: 2px 10px; }
+
+        .village-social-proof { font-size: 0.68rem; font-weight: 700; padding: 1px 8px; border-radius: 10px; margin-left: 6px; white-space: nowrap; }
+        .village-social-proof.high { background: #d1fae5; color: #065f46; }
+        .village-social-proof.mid { background: #fef3c7; color: #92400e; }
+        .village-social-proof.low { background: #f1f5f9; color: #64748b; }
+
     </style>
 </head>
 <body>
@@ -463,6 +489,13 @@
                                 <input type="text" id="prof_driveLink" class="form-control" placeholder="https://drive.google.com/..." onchange="updateProfile()">
                                 <button class="btn btn-outline-primary" type="button" onclick="openDriveLink()" title="Open Link">🔗</button>
                             </div>
+                        </div>
+                        <div class="col-12 mt-2 border-top pt-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="prof_pledge" onchange="togglePledge()">
+                                <label class="form-check-label small fw-bold" id="lbl-pledge" for="prof_pledge">I commit to completing the full 3F4D+MD schedule this season</label>
+                            </div>
+                            <div id="pledge-date-display" class="small text-muted" style="font-size: 0.72rem; margin-top: 2px;"></div>
                         </div>
                     </div>
                 </div>
@@ -645,6 +678,7 @@
             
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-table">
+                    <div id="behavior-panel"></div>
                     <div class="card" id="tour-step-3">
                         <table class="table mb-0">
                             <thead>
@@ -669,6 +703,7 @@
                             <div class="d-flex gap-2 overflow-auto pb-1" id="weather-forecast-container" style="scrollbar-width: thin;">
                                 <!-- Weather items injected here -->
                             </div>
+                            <div id="weather-alerts-container" class="mt-2"></div>
                         </div>
                     </div>
                     <div id="calendar"></div>
@@ -916,6 +951,37 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW Registered')).catch(err => console.log('SW Error', err));
     });
+    // Friction reduction: the "✅ Done" notification action posts back here
+    // (when the app tab is already open) so a task can be completed without
+    // ever opening the schedule table.
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'quickdone') applyQuickDone(event.data.payload);
+    });
+}
+// Same one-tap completion, for the case where the app wasn't open yet and the
+// notification action had to launch a fresh window instead of messaging one.
+window.__pendingQuickDone = null;
+(function captureQuickDoneParam() {
+    try {
+        const params = new URLSearchParams(location.search);
+        const qd = params.get('quickdone');
+        if (qd) {
+            window.__pendingQuickDone = JSON.parse(qd);
+            history.replaceState({}, document.title, location.pathname);
+        }
+    } catch (e) { /* malformed param, ignore */ }
+})();
+function applyQuickDone(payload) {
+    if (!payload || !payload.farmerId || !payload.eventKey) return;
+    const idx = farmers.findIndex(x => x.id === payload.farmerId);
+    if (idx === -1) return;
+    const f = farmers[idx];
+    if (!f.completed) f.completed = [];
+    if (!f.completed.includes(payload.eventKey)) f.completed.push(payload.eventKey);
+    db.farmers.put(f);
+    if (typeof syncFarmerToFirestore === 'function') syncFarmerToFirestore(f);
+    if (idx === activeIdx) recalculate('all');
+    renderNav();
 }
 window.addEventListener('offline', () => document.getElementById('offline-badge').classList.remove('d-none'));
 window.addEventListener('online', () => document.getElementById('offline-badge').classList.add('d-none'));
@@ -1037,7 +1103,23 @@ const TRANSLATIONS = {
         btn_test_notif: "Send Test Notification",
         lbl_log_irr: "Irrigation",
         all_schedules: "All Schedules",
-        gallery: "Gallery"
+        gallery: "Gallery",
+        // --- Behavioral design layer ---
+        notif_optin_prompt: "Turn on reminders for today's and tomorrow's water-management tasks? You can turn this off later in your phone's notification settings.",
+        lbl_pledge: "I commit to completing the full 3F4D+MD schedule this season",
+        pledge_since: "Pledged on",
+        pledge_active_text: "Season pledge active — you committed to the full schedule.",
+        pledge_prompt_text: "Make a season pledge: commit to completing the full 3F4D+MD schedule.",
+        pledge_cta: "I commit",
+        progress_title: "3F4D cycles completed",
+        social_proof_md_label: "started MD",
+        social_proof_md_title: "Farmers in this village who have marked Mid-season Drainage as done, out of those whose season has started",
+        nudge_rain_title: "Rain expected during Mid-season Drainage.",
+        nudge_rain_body: "If heavy rain falls around {date}, it's fine to delay draining by a day or two — resume once the field is dry again.",
+        nudge_heat_title: "Extreme heat expected during flooding.",
+        nudge_heat_body: "If temperatures stay above 35°C around {date}, keep the field flooded a little longer than usual to protect the crop.",
+        notif_action_done: "✅ Done",
+        anchor_reference_label: "Typical continuous-flooding (reference)"
     },
     bn: {
         title: "৩এফ৪ডি+এমডি প্রো",
@@ -1133,7 +1215,23 @@ const TRANSLATIONS = {
         btn_test_notif: "টেস্ট নোটিফিকেশন পাঠান",
         lbl_log_irr: "সেच",
         all_schedules: "সকল সময়সূচী",
-        gallery: "গ্যালারি"
+        gallery: "গ্যালারি",
+        // --- Behavioral design layer ---
+        notif_optin_prompt: "আজ ও আগামীকালের পানি ব্যবস্থাপনার কাজের জন্য রিমাইন্ডার চালু করবেন? পরে ফোনের নোটিফিকেশন সেটিংস থেকে এটি বন্ধ করা যাবে।",
+        lbl_pledge: "এই মৌসুমে সম্পূর্ণ ৩এফ৪ডি+এমডি সময়সূচী মেনে চলার অঙ্গীকার করছি",
+        pledge_since: "অঙ্গীকার করা হয়েছে",
+        pledge_active_text: "মৌসুমের অঙ্গীকার সক্রিয় — আপনি সম্পূর্ণ সময়সূচী মেনে চলার অঙ্গীকার করেছেন।",
+        pledge_prompt_text: "মৌসুমের অঙ্গীকার করুন: সম্পূর্ণ ৩এফ৪ডি+এমডি সময়সূচী মেনে চলার প্রতিশ্রুতি দিন।",
+        pledge_cta: "আমি অঙ্গীকার করছি",
+        progress_title: "সম্পন্ন ৩এফ৪ডি চক্র",
+        social_proof_md_label: "এমডি শুরু করেছেন",
+        social_proof_md_title: "এই গ্রামে যাদের মৌসুম শুরু হয়েছে তাদের মধ্যে যারা মধ্য-মৌসুম নিকাশ সম্পন্ন চিহ্নিত করেছেন",
+        nudge_rain_title: "মধ্য-মৌসুম নিকাশের সময় বৃষ্টির সম্ভাবনা।",
+        nudge_rain_body: "{date} তারিখের আশেপাশে ভারী বৃষ্টি হলে, নিকাশ ১-২ দিন পিছিয়ে দেওয়া ঠিক আছে — জমি আবার শুকিয়ে গেলে আবার শুরু করুন।",
+        nudge_heat_title: "প্লাবনের সময় প্রচণ্ড গরমের সম্ভাবনা।",
+        nudge_heat_body: "{date} তারিখের আশেপাশে তাপমাত্রা ৩৫°সে-এর বেশি থাকলে, ফসল রক্ষায় স্বাভাবিকের চেয়ে একটু বেশি সময় জমি প্লাবিত রাখুন।",
+        notif_action_done: "✅ সম্পন্ন",
+        anchor_reference_label: "প্রচলিত ক্রমাগত প্লাবন (তুলনার জন্য)"
     }
 };
 
@@ -1201,7 +1299,8 @@ function changeLanguage(lang) {
         'lbl-sm-flood-start': 'sm_flood_start', 'lbl-sm-flood-start-tp': 'sm_flood_start_tp', 'lbl-sm-flood-dur': 'sm_flood_dur',
         'lbl-sm-hd-das': 'sm_hd_das',
         'lbl-sm-enable-pitan': 'sm_enable_pitan', 'lbl-sm-p-start-date': 'sm_p_start_date', 'lbl-sm-p-dur': 'sm_p_dur',
-        'opt_mode_prof': 'mode_prof', 'opt_mode_simple': 'mode_simple'
+        'opt_mode_prof': 'mode_prof', 'opt_mode_simple': 'mode_simple',
+        'lbl-pledge': 'lbl_pledge'
     };
     for(const [id, key] of Object.entries(staticIds)) {
         const el = document.getElementById(id);
@@ -1362,7 +1461,8 @@ async function initApp() {
         renderNav();
         loadActiveFarmer();
         changeMode(currentMode);
-        checkNotifications(); 
+        checkNotifications();
+        if (window.__pendingQuickDone) { applyQuickDone(window.__pendingQuickDone); window.__pendingQuickDone = null; }
     } catch (e) {
         console.error("DB Error:", e);
         alert("Database Error. Please clear cache and reload. (" + (e.message || e) + ")");
@@ -1396,6 +1496,7 @@ function loadActiveFarmer() {
     if(!f.photos) f.photos = {};
     if(!f.autoDates) f.autoDates = {};
     if(!f.irrigation) f.irrigation = {};
+    if(!f.pledge) f.pledge = { active: false, date: "" };
 
     document.getElementById('prof_name').value = f.name;
     document.getElementById('prof_village').value = f.village || "";
@@ -1425,7 +1526,8 @@ function loadActiveFarmer() {
         f.manualKeys.includes(k.id) ? el.classList.add('manual-highlight') : el.classList.remove('manual-highlight');
     });
     document.getElementById('date_yp').value = f.dates['yp'] || "";
-    
+    renderPledgeDisplay();
+
     recalculate('all');
     renderIrrigationGraph(); 
     if (calendar) {
@@ -1449,6 +1551,32 @@ function updateProfile() {
     saveToLocal();
     // 村名変更時にタブ構造を再描画
     renderNav();
+}
+
+// --- Behavioral design: commitment device ---
+// A small public-style pledge, made once at the start of the season, that the
+// farmer (or facilitator on their behalf) actively ticks. Written commitments
+// made "in front of" the app tend to hold up better than a silent plan.
+function togglePledge() {
+    const f = farmers[activeIdx];
+    if (!f) return;
+    if (!f.pledge) f.pledge = { active: false, date: "" };
+    const checked = document.getElementById('prof_pledge').checked;
+    f.pledge.active = checked;
+    f.pledge.date = checked ? formatDateISO(new Date()) : "";
+    saveToLocal();
+    renderPledgeDisplay();
+    renderBehaviorPanel();
+}
+
+function renderPledgeDisplay() {
+    const f = farmers[activeIdx];
+    const checkbox = document.getElementById('prof_pledge');
+    const display = document.getElementById('pledge-date-display');
+    if (!f || !checkbox || !display) return;
+    if (!f.pledge) f.pledge = { active: false, date: "" };
+    checkbox.checked = !!f.pledge.active;
+    display.innerText = (f.pledge.active && f.pledge.date) ? `${t('pledge_since')} ${f.pledge.date}` : "";
 }
 
 function getGPS() {
@@ -1753,6 +1881,68 @@ function isValidDateKey(s) {
     return /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
+// --- Behavioral design panel: pledge, progress ---
+const BEHAVIOR_ECON = {
+    conventionalIrrMinPerDay: 90   // approx. daily irrigation minutes under continuous flooding (anchor/reference line)
+};
+
+function getCycleStatus(f, todayStr) {
+    // f3d1..f3d6 = the six 3-day-flood / 4-day-drain cycles
+    const cycles = [];
+    for (let i = 1; i <= 6; i++) {
+        const id = 'f3d' + i;
+        const date = f.dates[id];
+        const done = !!(f.completed && f.completed.includes(id));
+        let state = 'future';
+        if (done) state = 'done';
+        else if (date && date <= todayStr) state = 'due';
+        cycles.push({ id, date, done, state });
+    }
+    return cycles;
+}
+
+function renderBehaviorPanel() {
+    const panel = document.getElementById('behavior-panel');
+    const f = farmers[activeIdx];
+    if (!panel) return;
+    if (!f) { panel.innerHTML = ""; return; }
+    const todayStr = formatDateISO(new Date());
+    const sowingSet = !!(f.dates && f.dates['sowing']);
+
+    // 1) Commitment pledge banner (commitment device)
+    let pledgeHtml = "";
+    if (f.pledge && f.pledge.active) {
+        pledgeHtml = `<div class="pledge-banner pledged">
+            <span class="pledge-text">✅ ${t('pledge_active_text')}</span>
+            <span class="small text-muted">${t('pledge_since')} ${escapeHtml(f.pledge.date)}</span>
+        </div>`;
+    } else if (sowingSet) {
+        pledgeHtml = `<div class="pledge-banner unpledged">
+            <span class="pledge-text">📣 ${t('pledge_prompt_text')}</span>
+            <button class="btn btn-sm btn-warning fw-bold" onclick="document.getElementById('prof_pledge').checked=true; togglePledge();">${t('pledge_cta')}</button>
+        </div>`;
+    }
+
+    // 2) Progress bar + per-cycle dots (immediate feedback, cumulative not streak-based
+    //    so a single missed week doesn't erase the farmer's sense of progress)
+    const cycles = getCycleStatus(f, todayStr);
+    const doneCount = cycles.filter(c => c.done).length;
+    const dotsHtml = cycles.map((c, i) => {
+        const label = escapeHtml(t('f3d' + (i + 1)) + (c.date ? ' (' + c.date + ')' : ''));
+        return `<span class="cycle-dot ${c.state}" title="${label}">${c.done ? '✓' : (i + 1)}</span>`;
+    }).join('');
+    const progressHtml = `<div class="progress-card">
+        <div class="progress-top">
+            <span class="progress-title">🔄 ${t('progress_title')}</span>
+            <span class="progress-count">${doneCount}/6</span>
+        </div>
+        <div class="progress" style="height:8px;"><div class="progress-bar bg-success" style="width:${(doneCount / 6 * 100).toFixed(0)}%"></div></div>
+        <div class="cycle-dots">${dotsHtml}</div>
+    </div>`;
+
+    panel.innerHTML = [pledgeHtml, progressHtml].filter(Boolean).join('');
+}
+
 function refreshViews() {
     if(!farmers[activeIdx]) return;
     const f = farmers[activeIdx];
@@ -1833,6 +2023,7 @@ function refreshViews() {
         tbody.innerHTML += `<tr class="${rowClass}"><td>${t(k.id)}${warningText}${actionsHtml}</td><td class="fw-bold text-end">${val}<br><small class="text-secondary" style="font-size:0.75em;">${benDate}</small>${calcInfo}</td><td class="text-center"><input type="checkbox" class="form-check-input" ${isDone ? 'checked' : ''} onchange="toggleComplete('${k.id}')"></td></tr>`;
     });
     if(calendar) { calendar.removeAllEvents(); calendar.addEventSource(events); }
+    renderBehaviorPanel();
     const slideMarkers = document.getElementById('slide_markers');
     slideMarkers.innerHTML = '';
     slideConfig.forEach(item => {
@@ -2121,6 +2312,17 @@ function renderDaeMap() {
     if (bounds.length > 0) daeMap.fitBounds(bounds, { padding: [20, 20], maxZoom: 15 });
 }
 
+// --- Behavioral design: descriptive social norm ---
+// "X of Y farmers in this village have already started" is shown per village
+// so a farmer/facilitator can see local uptake at a glance, not just their own field.
+function getVillageMdProgress(vName) {
+    const started = farmers.filter(f => (f.village || "Unassigned") === vName && f.dates && f.dates['sowing']);
+    const total = started.length;
+    if (total === 0) return null;
+    const done = started.filter(f => f.completed && f.completed.includes('md_start')).length;
+    return { done, total };
+}
+
 function renderNav() {
     const vContainer = document.getElementById('villageTabs');
     const fContainer = document.getElementById('farmerTabs');
@@ -2183,6 +2385,20 @@ function renderNav() {
             badge.innerText = "!";
             badge.style.fontSize = "0.6rem";
             vBtn.appendChild(badge);
+        }
+
+        // ★ Social proof: share of started farmers in this village who have
+        // marked Mid-season Drainage as done. Only counts farmers whose
+        // season has actually begun (sowing set), so idle villages show nothing.
+        const mdProgress = getVillageMdProgress(vName);
+        if (mdProgress) {
+            const pct = mdProgress.done / mdProgress.total;
+            const proofCls = pct >= 0.6 ? 'high' : (pct > 0 ? 'mid' : 'low');
+            const proofBadge = document.createElement('span');
+            proofBadge.className = `village-social-proof ${proofCls}`;
+            proofBadge.title = t('social_proof_md_title');
+            proofBadge.innerText = `${mdProgress.done}/${mdProgress.total} ${t('social_proof_md_label')}`;
+            vBtn.appendChild(proofBadge);
         }
 
         vBtn.onclick = () => {
@@ -2276,6 +2492,7 @@ function createFarmerInVillage(villageName, farmerName) {
     activeVillage = villageName || "Unassigned";
     renderNav();
     loadActiveFarmer();
+    ensureNotificationPermission();
 }
 
 async function deleteVillage() {
@@ -2325,6 +2542,19 @@ async function sendTestNotification() {
         tag: 'test-notif',
         renotify: true
     });
+}
+
+// --- Behavioral design: reminders default to ON ---
+// Default-effect nudge: instead of waiting for the user to dig into ⚙️ and
+// opt in, we ask once, right when a new farmer/village is created, so the
+// "do nothing" path leaves reminders switched on rather than off.
+async function ensureNotificationPermission() {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+    if (Notification.permission !== "default") return; // already granted or denied — respect it
+    if (localStorage.getItem('f3d_notif_asked') === '1') return; // only ask once per device
+    localStorage.setItem('f3d_notif_asked', '1');
+    if (!confirm(t('notif_optin_prompt'))) return;
+    try { await Notification.requestPermission(); } catch (e) { /* ignore */ }
 }
 
 function toggleYP() { 
@@ -2424,12 +2654,17 @@ function renderIrrigationGraph() {
     let cumulative = 0;
     const dailyData = [];
     const cumulativeData = [];
-    sortedDates.forEach(d => {
+    // Anchoring: a reference line showing what cumulative time would look like
+    // under continuous flooding, so the water-saving gap is a visible area, not
+    // just a number the farmer has to interpret alone.
+    const referenceData = [];
+    sortedDates.forEach((d, i) => {
         let val = f.irrigation[d].value;
         if (f.irrigation[d].unit === 'hr') val *= 60;
         cumulative += val;
         dailyData.push(val);
         cumulativeData.push(cumulative);
+        referenceData.push((i + 1) * BEHAVIOR_ECON.conventionalIrrMinPerDay);
     });
     if(irrigationChart) irrigationChart.destroy();
     irrigationChart = new Chart(ctx.getContext('2d'), {
@@ -2438,7 +2673,8 @@ function renderIrrigationGraph() {
             labels: sortedDates,
             datasets: [
                 { label: 'Daily (min) দৈনিক (মিনিট)', data: dailyData, backgroundColor: 'rgba(54, 162, 235, 0.6)', yAxisID: 'y' },
-                { label: 'Cumulative (min) মোট পুঞ্জীভূত (মিনিট)', data: cumulativeData, type: 'line', borderColor: 'rgba(255, 99, 132, 1)', yAxisID: 'y1' }
+                { label: 'Cumulative (min) মোট পুঞ্জীভূত (মিনিট)', data: cumulativeData, type: 'line', borderColor: 'rgba(255, 99, 132, 1)', yAxisID: 'y1' },
+                { label: t('anchor_reference_label'), data: referenceData, type: 'line', borderColor: 'rgba(148, 163, 184, 0.9)', borderDash: [6, 4], pointRadius: 0, yAxisID: 'y1', fill: false }
             ]
         },
         options: {
@@ -2702,6 +2938,7 @@ async function checkNotifications() {
     const tomorrowStr = formatDateISO(tomorrow);
     let todaySummary = "";
     let tomorrowSummary = "";
+    const todayTasks = []; // {farmerId, eventKey} — used for the one-tap "Done" action below
     farmers.forEach(f => {
         const villagePrefix = f.village ? `(${f.village}) ` : "";
         Object.keys(f.dates).forEach(key => {
@@ -2709,23 +2946,42 @@ async function checkNotifications() {
             const eventLabel = t(key);
             if (eventDate === todayStr) {
                 todaySummary += `• ${villagePrefix}${f.name}: ${eventLabel}\n`;
+                todayTasks.push({ farmerId: f.id, eventKey: key });
             } else if (eventDate === tomorrowStr) {
                 tomorrowSummary += `• ${villagePrefix}${f.name}: ${eventLabel}\n`;
             }
         });
     });
+    // Implementation-intention nudge: fold a concrete "if rain/heat is coming,
+    // then do X" line into the reminder, using the last weather check cached
+    // by fetchWeather() for the active farmer.
+    let nudgeLine = "";
+    if (window.f3dWeatherAlerts) {
+        const wa = window.f3dWeatherAlerts;
+        if (wa.mdWarning) nudgeLine += `\n🌧️ ${t('nudge_rain_body').replace('{date}', wa.mdWarningDate)}`;
+        if (wa.floodWarning) nudgeLine += `\n🔥 ${t('nudge_heat_body').replace('{date}', wa.floodWarningDate)}`;
+    }
     const registration = await navigator.serviceWorker.ready;
+    // Friction reduction: when there is exactly one task today, let the
+    // farmer/facilitator mark it done straight from the notification —
+    // no need to open the app and find the right row.
+    const singleTodayTask = todayTasks.length === 1 ? todayTasks[0] : null;
     if (todaySummary) {
-        registration.showNotification(t('notif_title'), {
-            body: `${t('notif_today')}\n${todaySummary}`,
+        const notifOptions = {
+            body: `${t('notif_today')}\n${todaySummary}${nudgeLine}`,
             icon: 'icon.png',
             tag: 'today-' + todayStr,
             renotify: true
-        });
+        };
+        if (singleTodayTask && 'actions' in Notification.prototype) {
+            notifOptions.actions = [{ action: 'quickdone', title: t('notif_action_done') }];
+            notifOptions.data = { quickDone: singleTodayTask };
+        }
+        registration.showNotification(t('notif_title'), notifOptions);
     }
     if (tomorrowSummary) {
         registration.showNotification(t('notif_title'), {
-            body: `${t('notif_tomorrow')}\n${tomorrowSummary}`,
+            body: `${t('notif_tomorrow')}\n${tomorrowSummary}${nudgeLine}`,
             icon: 'icon.png',
             tag: 'tomorrow-' + todayStr
         });
@@ -3001,7 +3257,8 @@ async function fetchWeather(coordsStr) {
         const alertsContainer = document.getElementById('weather-alerts-container');
         if (alertsContainer) alertsContainer.innerHTML = '';
         let mdWarning = false, floodWarning = false;
-        
+        let mdWarningDate = null, floodWarningDate = null;
+
         if (f && f.dates) {
             const mdStart = f.dates.md_start ? new Date(f.dates.md_start) : null;
             const mdEnd = f.dates.md_end ? new Date(f.dates.md_end) : null;
@@ -3012,13 +3269,19 @@ async function fetchWeather(coordsStr) {
                 const dateObj = new Date(daily.time[i]);
                 const rain = daily.precipitation_sum[i];
                 const maxT = daily.temperature_2m_max[i];
-                if (mdStart && mdEnd && dateObj >= mdStart && dateObj <= mdEnd && rain > 5) mdWarning = true;
-                if (floodStart && floodEnd && dateObj >= floodStart && dateObj <= floodEnd && maxT > 35) floodWarning = true;
+                if (mdStart && mdEnd && dateObj >= mdStart && dateObj <= mdEnd && rain > 5 && !mdWarning) { mdWarning = true; mdWarningDate = daily.time[i]; }
+                if (floodStart && floodEnd && dateObj >= floodStart && dateObj <= floodEnd && maxT > 35 && !floodWarning) { floodWarning = true; floodWarningDate = daily.time[i]; }
             }
-            if (alertsContainer && currentMode === 'professional') {
-                if (mdWarning) alertsContainer.innerHTML += `<div class="alert alert-warning py-2 mb-2" style="font-size:0.8rem;">⚠️ <b>Weather Alert:</b> Heavy rain expected during Mid-Season Drainage.</div>`;
-                if (floodWarning) alertsContainer.innerHTML += `<div class="alert alert-danger py-2 mb-2" style="font-size:0.8rem;">🔥 <b>Weather Alert:</b> Extreme heat (>35°C) expected during Flooding.</div>`;
+            // Implementation-intention nudge: cache "if rain/heat is coming, then
+            // do X" facts so checkNotifications() can fold them into a reminder
+            // even when this tab/view isn't open.
+            window.f3dWeatherAlerts = { mdWarning, mdWarningDate, floodWarning, floodWarningDate, farmerId: f.id };
+            if (alertsContainer) {
+                if (mdWarning) alertsContainer.innerHTML += `<div class="alert alert-warning py-2 mb-2" style="font-size:0.8rem;">🌧️ <b>${t('nudge_rain_title')}</b> ${t('nudge_rain_body').replace('{date}', mdWarningDate)}</div>`;
+                if (floodWarning) alertsContainer.innerHTML += `<div class="alert alert-danger py-2 mb-2" style="font-size:0.8rem;">🔥 <b>${t('nudge_heat_title')}</b> ${t('nudge_heat_body').replace('{date}', floodWarningDate)}</div>`;
             }
+        } else {
+            window.f3dWeatherAlerts = null;
         }
         
         for (let i = 0; i < daily.time.length; i++) {

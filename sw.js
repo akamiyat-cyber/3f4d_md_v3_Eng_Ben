@@ -1,6 +1,6 @@
 // キャッシュの名前（バージョン管理用）
 // 注意: index.html を更新して配布するときは、このバージョン番号も上げること
-const CACHE_NAME = 'f3d-pro-scheduler-v10';
+const CACHE_NAME = 'f3d-pro-scheduler-v11';
 
 // オフラインで利用可能にするファイルのリスト
 const ASSETS_TO_CACHE = [
@@ -84,8 +84,29 @@ self.addEventListener('fetch', (event) => {
 // --- ここから通知機能の追加 ---
 
 // 4. 通知クリック：通知がタップされた時にアプリを開く
+//    「✅ Done」アクション付きの通知（当日タスクが1件のときだけ付与）がタップされた
+//    場合は、アプリを開かずにそのタスクを完了扱いにできるようにする（摩擦の除去）。
 self.addEventListener('notificationclick', (event) => {
+  const action = event.action;
+  const quickDone = event.notification.data && event.notification.data.quickDone;
   event.notification.close(); // 通知を閉じる
+
+  if (action === 'quickdone' && quickDone) {
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        // アプリがすでに開いていれば、そのタブに直接メッセージを送って記録させる
+        for (const client of clientList) {
+          client.postMessage({ type: 'quickdone', payload: quickDone });
+          if ('focus' in client) return client.focus();
+        }
+        // 開いていなければ、記録すべきタスクをURLに載せて新規に開く
+        if (clients.openWindow) {
+          return clients.openWindow('./?quickdone=' + encodeURIComponent(JSON.stringify(quickDone)));
+        }
+      })
+    );
+    return;
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
