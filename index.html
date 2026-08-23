@@ -332,9 +332,6 @@
         @keyframes pulse-dot { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4); } 50% { box-shadow: 0 0 0 5px rgba(245,158,11,0); } }
         .streak-badge { font-size: 0.72rem; font-weight: 700; color: #b45309; background: #fef3c7; border-radius: 20px; padding: 2px 10px; }
 
-        .loss-frame-alert { border-radius: var(--radius-md); padding: 12px 16px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 0.85rem; }
-        .loss-frame-alert b { color: #7f1d1d; }
-
         .village-social-proof { font-size: 0.68rem; font-weight: 700; padding: 1px 8px; border-radius: 10px; margin-left: 6px; white-space: nowrap; }
         .village-social-proof.high { background: #d1fae5; color: #065f46; }
         .village-social-proof.mid { background: #fef3c7; color: #92400e; }
@@ -1115,8 +1112,6 @@ const TRANSLATIONS = {
         pledge_prompt_text: "Make a season pledge: commit to completing the full 3F4D+MD schedule.",
         pledge_cta: "I commit",
         progress_title: "3F4D cycles completed",
-        loss_title: "Missed water-saving window:",
-        loss_body: "{n} drainage cycle(s) passed their date without being marked done — an estimated {cost} Tk in irrigation savings may have been missed.",
         social_proof_md_label: "started MD",
         social_proof_md_title: "Farmers in this village who have marked Mid-season Drainage as done, out of those whose season has started",
         nudge_rain_title: "Rain expected during Mid-season Drainage.",
@@ -1229,8 +1224,6 @@ const TRANSLATIONS = {
         pledge_prompt_text: "মৌসুমের অঙ্গীকার করুন: সম্পূর্ণ ৩এফ৪ডি+এমডি সময়সূচী মেনে চলার প্রতিশ্রুতি দিন।",
         pledge_cta: "আমি অঙ্গীকার করছি",
         progress_title: "সম্পন্ন ৩এফ৪ডি চক্র",
-        loss_title: "পানি সাশ্রয়ের সুযোগ হাতছাড়া:",
-        loss_body: "{n}টি নিকাশ চক্র তারিখ পার হওয়ার পরও সম্পন্ন চিহ্নিত হয়নি — আনুমানিক {cost} টাকার সেচ সাশ্রয় হাতছাড়া হতে পারে।",
         social_proof_md_label: "এমডি শুরু করেছেন",
         social_proof_md_title: "এই গ্রামে যাদের মৌসুম শুরু হয়েছে তাদের মধ্যে যারা মধ্য-মৌসুম নিকাশ সম্পন্ন চিহ্নিত করেছেন",
         nudge_rain_title: "মধ্য-মৌসুম নিকাশের সময় বৃষ্টির সম্ভাবনা।",
@@ -1888,11 +1881,8 @@ function isValidDateKey(s) {
     return /^\d{4}-\d{2}-\d{2}$/.test(s);
 }
 
-// --- Behavioral design panel: pledge, progress, loss-frame ---
-// The loss-frame figure below is a deliberately simple, order-of-magnitude
-// estimate used to make a missed cycle concrete, not an engineering figure.
+// --- Behavioral design panel: pledge, progress ---
 const BEHAVIOR_ECON = {
-    costPerDrainDay: 60,           // approx. Tk of irrigation savings used in the loss-frame alert below
     conventionalIrrMinPerDay: 90   // approx. daily irrigation minutes under continuous flooding (anchor/reference line)
 };
 
@@ -1950,16 +1940,7 @@ function renderBehaviorPanel() {
         <div class="cycle-dots">${dotsHtml}</div>
     </div>`;
 
-    // 3) Loss-frame alert: overdue cycles (past date, not marked done) shown as
-    //    what is being lost, not what could be gained — loss aversion.
-    const overdueCycles = cycles.filter(c => c.state === 'due');
-    let lossHtml = "";
-    if (overdueCycles.length > 0) {
-        const missedCost = overdueCycles.length * 4 * BEHAVIOR_ECON.costPerDrainDay;
-        lossHtml = `<div class="loss-frame-alert">⚠️ <b>${t('loss_title')}</b> ${t('loss_body').replace('{n}', overdueCycles.length).replace('{cost}', missedCost.toLocaleString())}</div>`;
-    }
-
-    panel.innerHTML = [pledgeHtml, progressHtml, lossHtml].filter(Boolean).join('');
+    panel.innerHTML = [pledgeHtml, progressHtml].filter(Boolean).join('');
 }
 
 function refreshViews() {
