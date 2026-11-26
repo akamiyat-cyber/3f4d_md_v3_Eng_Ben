@@ -337,6 +337,14 @@
         .village-social-proof.mid { background: #fef3c7; color: #92400e; }
         .village-social-proof.low { background: #f1f5f9; color: #64748b; }
 
+        /* --- Percolation (Water Loss Check 72h) card --- */
+        .percolation-card { background: #ffffff; border: 1px solid #e2e8f0; border-left: 6px solid var(--border-pi); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 16px; box-shadow: var(--shadow-soft); }
+        .percolation-card.perc-overdue { background: #fef2f2; border-color: #fecaca; border-left-color: #ef4444; }
+        .percolation-card.perc-done { background: #ecfdf5; border-color: #a7f3d0; border-left-color: var(--brand-primary); }
+        .perc-overdue-text { color: #dc2626 !important; font-weight: 700; }
+        .perc-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+        .perc-datetime-input { width: auto; max-width: 195px; font-size: 0.78rem; }
+
     </style>
 </head>
 <body>
@@ -679,6 +687,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="tab-table">
                     <div id="behavior-panel"></div>
+                    <div id="percolation-panel"></div>
                     <div class="card" id="tour-step-3">
                         <table class="table mb-0">
                             <thead>
@@ -976,8 +985,13 @@ function applyQuickDone(payload) {
     const idx = farmers.findIndex(x => x.id === payload.farmerId);
     if (idx === -1) return;
     const f = farmers[idx];
-    if (!f.completed) f.completed = [];
-    if (!f.completed.includes(payload.eventKey)) f.completed.push(payload.eventKey);
+    if (payload.eventKey === 'percolation_check') {
+        if (!f.percolation_check) f.percolation_check = { start: "", done: true };
+        else f.percolation_check.done = true;
+    } else {
+        if (!f.completed) f.completed = [];
+        if (!f.completed.includes(payload.eventKey)) f.completed.push(payload.eventKey);
+    }
     db.farmers.put(f);
     if (typeof syncFarmerToFirestore === 'function') syncFarmerToFirestore(f);
     if (idx === activeIdx) recalculate('all');
@@ -1119,7 +1133,19 @@ const TRANSLATIONS = {
         nudge_heat_title: "Extreme heat expected during flooding.",
         nudge_heat_body: "If temperatures stay above 35°C around {date}, keep the field flooded a little longer than usual to protect the crop.",
         notif_action_done: "✅ Done",
-        anchor_reference_label: "Typical continuous-flooding (reference)"
+        anchor_reference_label: "Typical continuous-flooding (reference)",
+        // --- Percolation (Water Loss Check 72h) ---
+        perc_title: "Water Loss Check (72h)",
+        perc_start_btn: "Start measurement",
+        perc_start_label: "Started",
+        perc_check_label: "Check at",
+        perc_not_started: "Not started",
+        perc_task_start: "Draw a line on the stick at the water level and tap Start.",
+        perc_task_check: "Check the water level against the line on the stick.",
+        perc_export_ics: "Add to Calendar (.ics)",
+        perc_overdue: "Overdue",
+        perc_done: "Done",
+        perc_reset_confirm: "Reset water loss check record for this farmer?"
     },
     bn: {
         title: "৩এফ৪ডি+এমডি প্রো",
@@ -1231,7 +1257,19 @@ const TRANSLATIONS = {
         nudge_heat_title: "প্লাবনের সময় প্রচণ্ড গরমের সম্ভাবনা।",
         nudge_heat_body: "{date} তারিখের আশেপাশে তাপমাত্রা ৩৫°সে-এর বেশি থাকলে, ফসল রক্ষায় স্বাভাবিকের চেয়ে একটু বেশি সময় জমি প্লাবিত রাখুন।",
         notif_action_done: "✅ সম্পন্ন",
-        anchor_reference_label: "প্রচলিত ক্রমাগত প্লাবন (তুলনার জন্য)"
+        anchor_reference_label: "প্রচলিত ক্রমাগত প্লাবন (তুলনার জন্য)",
+        // --- Percolation (Water Loss Check 72h) ---
+        perc_title: "পানি কমা পরীক্ষা (৭২ ঘণ্টা)",
+        perc_start_btn: "পরিমাপ শুরু করুন",
+        perc_start_label: "শুরু হয়েছে",
+        perc_check_label: "পরীক্ষার সময়",
+        perc_not_started: "শুরু হয়নি",
+        perc_task_start: "পানির স্তরে লাঠিতে দাগ দিন এবং শুরু চাপুন।",
+        perc_task_check: "লাঠির দাগের সাথে পানির স্তর মিলিয়ে দেখুন।",
+        perc_export_ics: "ক্যালেন্ডারে যোগ করুন (.ics)",
+        perc_overdue: "সময় পার হয়েছে",
+        perc_done: "সম্পন্ন",
+        perc_reset_confirm: "এই কৃষকের পানি কমা পরীক্ষার রেকর্ড রিসেট করবেন?"
     }
 };
 
@@ -1482,6 +1520,7 @@ function initInputs() {
     dateKeys.forEach(k => {
         container.innerHTML += `<div class="mb-2"><label class="small fw-bold mb-1">${t(k.id)} <span id="lock_icon_${k.id}" class="text-danger d-none">🔒</span></label><div class="d-flex align-items-center gap-2"><input type="date" id="date_${k.id}" class="form-control form-control-sm input-${k.type}" onchange="updateFromManual('${k.id}')"><small id="ben_date_${k.id}" class="text-muted" style="font-size: 0.75rem; white-space: nowrap;"></small></div></div>`;
         if (k.id === 'md_end') container.innerHTML += `<div class="yp-toggle-container"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="use_yp" onchange="toggleYP()"><label class="form-check-label small fw-bold" for="use_yp">${t('yp_label')} <span id="lock_icon_yp" class="text-danger d-none">🔒</span></label></div><div class="d-flex align-items-center gap-2"><input type="date" id="date_yp" class="form-control form-control-sm" disabled onchange="updateFromManual('yp')"><small id="ben_date_yp" class="text-muted" style="font-size: 0.75rem; white-space: nowrap;"></small></div></div>`;
+        if (k.id === 'pi_flood_start') container.innerHTML += `<div class="mb-2"><label class="small fw-bold mb-1">${t('perc_title')}</label><div class="d-flex align-items-center gap-2"><input type="text" id="date_percolation_check" class="form-control form-control-sm input-pi" readonly placeholder=""><small id="ben_date_percolation_check" class="text-muted" style="font-size: 0.75rem; white-space: nowrap;"></small></div></div>`;
     });
 }
 
@@ -1857,6 +1896,23 @@ function recalculate(triggerId) {
         pStartContainer.style.display = hidePitan ? 'none' : 'block';
         pEndContainer.style.display = hidePitan ? 'none' : 'block';
     }
+    const percDateEl = document.getElementById('date_percolation_check');
+    const percBenEl = document.getElementById('ben_date_percolation_check');
+    if (percDateEl) {
+        const percCheckDate = getPercolationCheckDate(f.percolation_check);
+        if (percCheckDate) {
+            const percDateStr = formatDateISO(percCheckDate);
+            const percTimeStr = formatTimeHHMM(percCheckDate);
+            percDateEl.value = `${percDateStr} ${percTimeStr}`;
+            const isOverdue = !(f.percolation_check && f.percolation_check.done) && (new Date() > percCheckDate);
+            percDateEl.classList.toggle('perc-overdue-text', isOverdue);
+            if (percBenEl) percBenEl.innerText = getBengaliDate(percDateStr);
+        } else {
+            percDateEl.value = "";
+            percDateEl.classList.remove('perc-overdue-text');
+            if (percBenEl) percBenEl.innerText = "";
+        }
+    }
 
     saveToLocal(); 
     refreshViews();
@@ -1943,6 +1999,223 @@ function renderBehaviorPanel() {
     panel.innerHTML = [pledgeHtml, progressHtml].filter(Boolean).join('');
 }
 
+// --- Percolation (Water Loss Check 72h) helpers & actions ---
+function formatDateTimeLocalISO(d) {
+    const pad = n => String(n).padStart(2, '0');
+    const tzOffset = -d.getTimezoneOffset();
+    const sign = tzOffset >= 0 ? '+' : '-';
+    const absOff = Math.abs(tzOffset);
+    const offH = pad(Math.floor(absOff / 60));
+    const offM = pad(absOff % 60);
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:00${sign}${offH}:${offM}`;
+}
+
+function toDateTimeLocalValue(d) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function parseDateTimeLocalValue(str) {
+    if (!str || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(str)) return null;
+    const [datePart, timePart] = str.split('T');
+    const [y, m, day] = datePart.split('-').map(Number);
+    const [h, min] = timePart.split(':').map(Number);
+    const d = new Date(y, m - 1, day, h, min, 0);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function formatTimeHHMM(d) {
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+function toBnDigits(str) {
+    return String(str).replace(/\d/g, ch => "০১২৩৪৫৬৭৮৯"[ch]);
+}
+
+function formatPercDateTime(d) {
+    const hhmm = formatTimeHHMM(d);
+    if (currentLang === 'bn') {
+        const monthsBn = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
+        return `${toBnDigits(d.getDate())} ${monthsBn[d.getMonth()]} ${toBnDigits(hhmm)}`;
+    }
+    const monthsEn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${monthsEn[d.getMonth()]} ${d.getDate()} ${hhmm}`;
+}
+
+function getPercolationStartDate(perc) {
+    if (!perc || !perc.start) return null;
+    const d = new Date(perc.start);
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function getPercolationCheckDate(perc) {
+    const startDate = getPercolationStartDate(perc);
+    if (!startDate) return null;
+    return new Date(startDate.getTime() + 72 * 60 * 60 * 1000);
+}
+
+function isPercolationStartDue(f, todayStr) {
+    if (!f || !f.dates || !f.dates['pi_flood_start']) return false;
+    const perc = f.percolation_check;
+    if (perc && (perc.start || perc.done)) return false;
+    if (todayStr < f.dates['pi_flood_start']) return false;
+    if (f.completed && f.completed.includes('harvest')) return false;
+    if (f.dates['harvest'] && todayStr > f.dates['harvest']) return false;
+    return true;
+}
+
+function startPercolationCheck() {
+    const f = farmers[activeIdx];
+    if (!f) return;
+    f.percolation_check = {
+        start: formatDateTimeLocalISO(new Date()),
+        done: false
+    };
+    saveToLocal();
+    recalculate('all');
+}
+
+function updatePercolationStart(val) {
+    const f = farmers[activeIdx];
+    if (!f) return;
+    const d = parseDateTimeLocalValue(val);
+    if (!d) return;
+    if (!f.percolation_check) f.percolation_check = { start: "", done: false };
+    f.percolation_check.start = formatDateTimeLocalISO(d);
+    saveToLocal();
+    recalculate('all');
+}
+
+function togglePercolationDone() {
+    const f = farmers[activeIdx];
+    if (!f || !f.percolation_check || !f.percolation_check.start) return;
+    f.percolation_check.done = !f.percolation_check.done;
+    saveToLocal();
+    recalculate('all');
+}
+
+function resetPercolationCheck() {
+    const f = farmers[activeIdx];
+    if (!f || !f.percolation_check) return;
+    if (!confirm(t('perc_reset_confirm'))) return;
+    delete f.percolation_check;
+    saveToLocal();
+    recalculate('all');
+}
+
+function escapeIcsText(str) {
+    return String(str ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/\r?\n/g, '\\n')
+        .replace(/;/g, '\\;')
+        .replace(/,/g, '\\,');
+}
+
+function formatIcsUtc(d) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(d.getUTCHours())}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+}
+
+function exportPercolationICS() {
+    const f = farmers[activeIdx];
+    if (!f || !f.percolation_check || !f.percolation_check.start) return;
+    const startDate = getPercolationStartDate(f.percolation_check);
+    const checkDate = getPercolationCheckDate(f.percolation_check);
+    if (!startDate || !checkDate) return;
+
+    const endDate = new Date(checkDate.getTime() + 30 * 60 * 1000);
+    const nowUtc = formatIcsUtc(new Date());
+    const villageSuffix = f.village ? ` (${f.village})` : '';
+    const summary = `${t('perc_title')} - ${f.name}${villageSuffix}`;
+    const description = `${t('perc_task_check')}\n${t('perc_start_label')}: ${formatPercDateTime(startDate)}\n${t('perc_check_label')}: ${formatPercDateTime(checkDate)}`;
+    const uid = `percolation-${f.id}@3f4d-pro`;
+
+    const lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//3F4D Pro Scheduler//Water Loss Check//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        `UID:${uid}`,
+        `DTSTAMP:${nowUtc}`,
+        `DTSTART:${formatIcsUtc(checkDate)}`,
+        `DTEND:${formatIcsUtc(endDate)}`,
+        `SUMMARY:${escapeIcsText(summary)}`,
+        `DESCRIPTION:${escapeIcsText(description)}`,
+        'BEGIN:VALARM',
+        'TRIGGER;RELATED=START:PT0M',
+        'ACTION:DISPLAY',
+        `DESCRIPTION:${escapeIcsText(summary)}`,
+        'END:VALARM',
+        'END:VEVENT',
+        'END:VCALENDAR'
+    ];
+    const icsContent = lines.join('\r\n') + '\r\n';
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const safeName = (f.name || 'farmer').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `${safeName}_WaterLossCheck_${formatDateISO(checkDate)}.ics`;
+    downloadFallback(blob, fileName);
+}
+
+function renderPercolationPanel() {
+    const panel = document.getElementById('percolation-panel');
+    const f = farmers[activeIdx];
+    if (!panel) return;
+    if (!f) { panel.innerHTML = ""; return; }
+
+    const perc = f.percolation_check;
+    const startDate = getPercolationStartDate(perc);
+    const checkDate = getPercolationCheckDate(perc);
+
+    if (!startDate || !checkDate) {
+        panel.innerHTML = `<div class="percolation-card">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <div class="fw-bold" style="font-size: 0.85rem; color: #334155;">💧 ${escapeHtml(t('perc_title'))}
+                        <span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">${escapeHtml(t('perc_not_started'))}</span>
+                    </div>
+                    <div class="text-muted mt-1" style="font-size: 0.75rem;">${escapeHtml(t('perc_task_start'))}</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-primary fw-bold" onclick="startPercolationCheck()">▶ ${escapeHtml(t('perc_start_btn'))}</button>
+            </div>
+        </div>`;
+        return;
+    }
+
+    const isDone = !!perc.done;
+    const isOverdue = !isDone && (new Date() > checkDate);
+    const startDisp = formatPercDateTime(startDate);
+    const checkDisp = formatPercDateTime(checkDate);
+    const cardStateCls = isDone ? 'perc-done' : (isOverdue ? 'perc-overdue' : '');
+
+    panel.innerHTML = `<div class="percolation-card ${cardStateCls}">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="fw-bold" style="font-size: 0.85rem; color: #334155;">
+                💧 ${escapeHtml(t('perc_title'))}
+                ${isDone ? `<span class="badge bg-success ms-1" style="font-size: 0.7rem;">✅ ${escapeHtml(t('perc_done'))}</span>` : ''}
+                ${isOverdue ? `<span class="badge bg-danger ms-1" style="font-size: 0.7rem;">⚠️ ${escapeHtml(t('perc_overdue'))}</span>` : ''}
+            </div>
+            <div class="form-check m-0">
+                <input class="form-check-input" type="checkbox" id="perc_done_checkbox" ${isDone ? 'checked' : ''} onchange="togglePercolationDone()">
+                <label class="form-check-label small fw-bold" for="perc_done_checkbox">${escapeHtml(t('perc_done'))}</label>
+            </div>
+        </div>
+        <div class="mt-2" style="font-size: 0.82rem;">
+            <span>${escapeHtml(t('perc_start_label'))}: <strong>${escapeHtml(startDisp)}</strong></span>
+            <span class="mx-1 text-muted">／</span>
+            <span class="${isOverdue ? 'perc-overdue-text' : ''}">${escapeHtml(t('perc_check_label'))}: <strong>${escapeHtml(checkDisp)}</strong></span>
+        </div>
+        ${!isDone ? `<div class="mt-1 ${isOverdue ? 'perc-overdue-text' : 'text-muted'}" style="font-size: 0.75rem;">${escapeHtml(t('perc_task_check'))}</div>` : ''}
+        <div class="perc-controls">
+            <label for="perc_start_input" class="small text-muted mb-0">${escapeHtml(t('perc_start_label'))}:</label>
+            <input type="datetime-local" id="perc_start_input" class="form-control form-control-sm perc-datetime-input" value="${toDateTimeLocalValue(startDate)}" ${isDone ? 'disabled' : ''} onchange="updatePercolationStart(this.value)">
+            <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportPercolationICS()">📅 ${escapeHtml(t('perc_export_ics'))}</button>
+            <button type="button" class="btn btn-sm btn-link text-muted text-decoration-none p-0 ms-auto" onclick="resetPercolationCheck()" title="Reset">↺</button>
+        </div>
+    </div>`;
+}
+
 function refreshViews() {
     if(!farmers[activeIdx]) return;
     const f = farmers[activeIdx];
@@ -1993,8 +2266,46 @@ function refreshViews() {
         return f.dates[a.id].localeCompare(f.dates[b.id]);
     });
 
+    const tableItems = sortedKeys.map(k => ({ kind: 'dateKey', sortDate: f.dates[k.id], keyObj: k }));
+    const percCheckDate = getPercolationCheckDate(f.percolation_check);
+    if (percCheckDate) {
+        const percDateStr = formatDateISO(percCheckDate);
+        const percTimeStr = formatTimeHHMM(percCheckDate);
+        const percBenDate = getBengaliDate(percDateStr);
+        const percDone = !!(f.percolation_check && f.percolation_check.done);
+        const percOverdue = !percDone && (new Date() > percCheckDate);
+        events.push({
+            title: `💧 ${t('perc_title')} (${percTimeStr}) (${percBenDate})`,
+            start: percDateStr,
+            allDay: true,
+            color: percOverdue ? '#dc2626' : '#0284c7'
+        });
+        tableItems.push({
+            kind: 'percolation',
+            sortDate: percDateStr,
+            dateStr: percDateStr,
+            timeStr: percTimeStr,
+            benDate: percBenDate,
+            done: percDone,
+            overdue: percOverdue
+        });
+        tableItems.sort((a, b) => a.sortDate.localeCompare(b.sortDate));
+    }
+
     let prevDateStr = null;
-    sortedKeys.forEach(k => {
+    tableItems.forEach(item => {
+        if (item.kind === 'percolation') {
+            const rowClass = item.overdue ? 'row-error' : 'row-pi';
+            let actionsHtml = "";
+            if (currentMode === 'professional') {
+                const smsBody = encodeURIComponent(`Reminder: ${t('perc_title')} is scheduled for ${item.benDate} (${item.dateStr} ${item.timeStr}). ${t('perc_task_check')}`);
+                actionsHtml = `<br><a href="sms:?body=${smsBody}" class="text-decoration-none me-1" title="Send SMS">📱</a><a href="https://wa.me/?text=${smsBody}" target="_blank" class="text-decoration-none" title="Send WhatsApp">💬</a>`;
+            }
+            const overdueBadge = item.overdue ? ` <span class="badge bg-danger" style="font-size:0.65em;">${escapeHtml(t('perc_overdue'))}</span>` : '';
+            tbody.innerHTML += `<tr class="${rowClass}"><td>💧 ${escapeHtml(t('perc_title'))}${overdueBadge}<br><small class="${item.overdue ? 'perc-overdue-text' : 'text-muted'}" style="font-size:0.72em;">${escapeHtml(t('perc_task_check'))}</small>${actionsHtml}</td><td class="fw-bold text-end"><span class="${item.overdue ? 'perc-overdue-text' : ''}">${item.dateStr} ${item.timeStr}</span><br><small class="text-secondary" style="font-size:0.75em;">${item.benDate}</small></td><td class="text-center"><input type="checkbox" class="form-check-input" ${item.done ? 'checked' : ''} onchange="togglePercolationDone()"></td></tr>`;
+            return;
+        }
+        const k = item.keyObj;
         const val = f.dates[k.id];
         const benDate = getBengaliDate(val);
         events.push({ title: `${t(k.id)} (${benDate})`, start: val, allDay: true, color: { pitan:'#28a745', md:'#e2b709', pi:'#ffe066', f3d:'#007bff', heading:'#6b46c1', base:'#718096' }[k.type] });
@@ -2024,6 +2335,7 @@ function refreshViews() {
     });
     if(calendar) { calendar.removeAllEvents(); calendar.addEventSource(events); }
     renderBehaviorPanel();
+    renderPercolationPanel();
     const slideMarkers = document.getElementById('slide_markers');
     slideMarkers.innerHTML = '';
     slideConfig.forEach(item => {
@@ -2348,9 +2660,18 @@ function renderNav() {
     farmers.forEach(f => {
         const tasks = [];
         dateKeys.forEach(k => {
-            if (f.dates[k.id] === todayStr) tasks.push(t(k.id));
+            if (f.dates && f.dates[k.id] === todayStr) tasks.push(t(k.id));
         });
-        if (f.use_yp && f.dates['yp'] === todayStr) tasks.push(t('yp_label'));
+        if (f.use_yp && f.dates && f.dates['yp'] === todayStr) tasks.push(t('yp_label'));
+        if (isPercolationStartDue(f, todayStr)) {
+            tasks.push(`${t('perc_title')}: ${t('perc_task_start')}`);
+        }
+        const percCheckDate = getPercolationCheckDate(f.percolation_check);
+        if (percCheckDate && !(f.percolation_check && f.percolation_check.done)) {
+            if (formatDateISO(percCheckDate) === todayStr) {
+                tasks.push(`${t('perc_title')} (${formatTimeHHMM(percCheckDate)})`);
+            }
+        }
         
         if (tasks.length > 0) {
             todayTasks.push({ village: f.village || "Unassigned", name: f.name, jobs: tasks });
@@ -2592,6 +2913,7 @@ function resetToDefault() {
         farmers[activeIdx].dates = {}; 
         farmers[activeIdx].manualKeys = []; 
         farmers[activeIdx].completed = []; 
+        delete farmers[activeIdx].percolation_check;
         saveToLocal(); 
         loadActiveFarmer(); 
     } 
@@ -2941,7 +3263,7 @@ async function checkNotifications() {
     const todayTasks = []; // {farmerId, eventKey} — used for the one-tap "Done" action below
     farmers.forEach(f => {
         const villagePrefix = f.village ? `(${f.village}) ` : "";
-        Object.keys(f.dates).forEach(key => {
+        Object.keys(f.dates || {}).forEach(key => {
             const eventDate = f.dates[key];
             const eventLabel = t(key);
             if (eventDate === todayStr) {
@@ -2951,6 +3273,21 @@ async function checkNotifications() {
                 tomorrowSummary += `• ${villagePrefix}${f.name}: ${eventLabel}\n`;
             }
         });
+        if (isPercolationStartDue(f, todayStr)) {
+            todaySummary += `• ${villagePrefix}${f.name}: ${t('perc_title')} - ${t('perc_task_start')}\n`;
+            todayTasks.push({ farmerId: f.id, eventKey: 'percolation_start', quickDone: false });
+        }
+        const percCheckDate = getPercolationCheckDate(f.percolation_check);
+        if (percCheckDate && !(f.percolation_check && f.percolation_check.done)) {
+            const percDateStr = formatDateISO(percCheckDate);
+            const percTimeStr = formatTimeHHMM(percCheckDate);
+            if (percDateStr === todayStr) {
+                todaySummary += `• ${villagePrefix}${f.name}: ${t('perc_title')} (${percTimeStr}) - ${t('perc_task_check')}\n`;
+                todayTasks.push({ farmerId: f.id, eventKey: 'percolation_check' });
+            } else if (percDateStr === tomorrowStr) {
+                tomorrowSummary += `• ${villagePrefix}${f.name}: ${t('perc_title')} (${percTimeStr}) - ${t('perc_task_check')}\n`;
+            }
+        }
     });
     // Implementation-intention nudge: fold a concrete "if rain/heat is coming,
     // then do X" line into the reminder, using the last weather check cached
@@ -2965,7 +3302,7 @@ async function checkNotifications() {
     // Friction reduction: when there is exactly one task today, let the
     // farmer/facilitator mark it done straight from the notification —
     // no need to open the app and find the right row.
-    const singleTodayTask = todayTasks.length === 1 ? todayTasks[0] : null;
+    const singleTodayTask = (todayTasks.length === 1 && todayTasks[0].quickDone !== false) ? todayTasks[0] : null;
     if (todaySummary) {
         const notifOptions = {
             body: `${t('notif_today')}\n${todaySummary}${nudgeLine}`,
@@ -3010,7 +3347,7 @@ function showAllSchedules() {
                 });
             }
         });
-        if (f.use_yp && f.dates['yp']) {
+        if (f.use_yp && f.dates && f.dates['yp']) {
             allEvents.push({
                 date: f.dates['yp'],
                 farmer: f.name,
@@ -3018,6 +3355,21 @@ function showAllSchedules() {
                 eventKey: 'yp',
                 eventName: t('yp_label'),
                 done: f.completed && f.completed.includes('yp'),
+                farmerIdx: idx
+            });
+        }
+        const percCheckDate = getPercolationCheckDate(f.percolation_check);
+        if (percCheckDate) {
+            const percDateStr = formatDateISO(percCheckDate);
+            const percTimeStr = formatTimeHHMM(percCheckDate);
+            allEvents.push({
+                date: percDateStr,
+                displayDate: `${percDateStr} ${percTimeStr}`,
+                farmer: f.name,
+                village: f.village || "-",
+                eventKey: 'percolation_check',
+                eventName: `💧 ${t('perc_title')}`,
+                done: !!(f.percolation_check && f.percolation_check.done),
                 farmerIdx: idx
             });
         }
@@ -3034,7 +3386,7 @@ function showAllSchedules() {
         const row = `
             <tr ${rowId} class="${highlightClass}">
                 <td style="white-space:nowrap;">
-                    <strong>${isToday ? '★ ' : ''}${escapeHtml(e.date)}</strong><br>
+                    <strong>${isToday ? '★ ' : ''}${escapeHtml(e.displayDate || e.date)}</strong><br>
                     <small class="text-muted">${benDate}</small>
                 </td>
                 <td>
