@@ -1,6 +1,6 @@
 // キャッシュの名前（バージョン管理用）
 // 注意: index.html を更新して配布するときは、このバージョン番号も上げること
-const CACHE_NAME = 'f3d-pro-scheduler-v13';
+const CACHE_NAME = 'f3d-pro-scheduler-v14';
 
 // オフラインで利用可能にするファイルのリスト
 const ASSETS_TO_CACHE = [
