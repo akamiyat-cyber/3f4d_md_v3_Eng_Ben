@@ -2820,6 +2820,10 @@ function updateFromManual(id) {
     if (!f.manualKeys.includes(id)) f.manualKeys.push(id);
     f.dates[id] = el.value;
 
+    if (id === 'sowing' && el.value && !(f.completed && f.completed.includes('tp'))) {
+        f.manualKeys = f.manualKeys.filter(k => k !== 'tp');
+    }
+
     if (currentMode === 'simple' && f.settings.sm_enable_pitan) {
         if (id === 'p_start') {
             const smEl = document.getElementById('sm_p_start_date');
