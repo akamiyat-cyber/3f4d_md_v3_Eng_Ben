@@ -3248,17 +3248,33 @@ async function confirmResetAll() {
 }
 
 async function shareOrDownload(blob, fileName) {
-    const file = new File([blob], fileName, { type: blob.type });
+    if (!blob) return;
+    const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try { await navigator.share({ files: [file], title: fileName }); } catch (err) { downloadFallback(blob, fileName); }
-    } else { downloadFallback(blob, fileName); }
+        try {
+            await navigator.share({ files: [file], title: fileName });
+        } catch (err) {
+            if (err && err.name === 'AbortError') return;
+            downloadFallback(blob, fileName);
+        }
+    } else {
+        downloadFallback(blob, fileName);
+    }
 }
 
 function downloadFallback(blob, fileName) {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = url;
     a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
     a.click();
+    setTimeout(() => {
+        if (a.parentNode) a.parentNode.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, 1500);
 }
 
 function exportToExcel() {
@@ -3376,19 +3392,131 @@ function zoomMap(delta) {
     wrapper.style.transform = `scale(${currentScale})`;
 }
 
+function drawRoundedRectPath(ctx, x, y, w, h, r) {
+    const radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+}
+
+function renderSlideToCanvas(f) {
+    const img = document.querySelector('#slide_wrapper img.slide-img');
+    if (!img || !img.complete || !img.naturalWidth) return null;
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    const scale = w / 1000;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+
+    const fontSize = Math.round(19 * scale);
+    const padX = Math.round(7 * scale);
+    const padY = Math.round(3 * scale);
+    const borderRadius = Math.round(6 * scale);
+    const lineWidth = Math.max(1.5, 1.8 * scale);
+    const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--brand-primary').trim() || '#0b6e4f';
+
+    ctx.font = `700 ${fontSize}px Inter, -apple-system, BlinkMacSystemFont, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    slideConfig.forEach(item => {
+        const dateVal = f && f.dates ? f.dates[item.id] : null;
+        if (!dateVal) return;
+        let dateStr = '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+            const parts = dateVal.split('-');
+            dateStr = `${parseInt(parts[1], 10)}/${parseInt(parts[2], 10)}`;
+        } else {
+            const dObj = new Date(dateVal);
+            if (isNaN(dObj.getTime())) return;
+            dateStr = `${dObj.getMonth() + 1}/${dObj.getDate()}`;
+        }
+
+        const cx = (item.left / 100) * w;
+        const topY = (item.top / 100) * h;
+        const textW = ctx.measureText(dateStr).width;
+        const boxW = textW + padX * 2;
+        const boxH = fontSize + padY * 2;
+        const boxX = Math.max(2, Math.min(w - boxW - 2, cx - boxW / 2));
+        const boxY = Math.max(2, Math.min(h - boxH - 2, topY));
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(15, 23, 42, 0.14)';
+        ctx.shadowBlur = 6 * scale;
+        ctx.shadowOffsetY = 2 * scale;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
+        drawRoundedRectPath(ctx, boxX, boxY, boxW, boxH, borderRadius);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.strokeStyle = accentColor;
+        ctx.lineWidth = lineWidth;
+        drawRoundedRectPath(ctx, boxX, boxY, boxW, boxH, borderRadius);
+        ctx.stroke();
+
+        ctx.fillStyle = accentColor;
+        ctx.fillText(dateStr, boxX + boxW / 2, boxY + boxH / 2 + 1);
+    });
+
+    return canvas;
+}
+
 function downloadMap() {
+    const f = farmers[activeIdx];
+    if (!f) return;
+    const todayStr = formatDateISO(new Date());
+    const safeName = (f.name || 'Farmer').replace(/[\\/:*?"<>|]/g, '_');
+    const fileName = `Map_${safeName}_${todayStr}.jpg`;
+
     showLoading();
+    try {
+        const directCanvas = renderSlideToCanvas(f);
+        if (directCanvas) {
+            directCanvas.toBlob(blob => {
+                hideLoading();
+                if (blob) {
+                    downloadFallback(blob, fileName);
+                } else {
+                    alert("Could not generate map image.");
+                }
+            }, 'image/jpeg', 0.9);
+            return;
+        }
+    } catch (e) {
+        console.warn("Direct canvas export failed, falling back to html2canvas:", e);
+    }
+
     const wrapper = document.getElementById('slide_wrapper');
     const originalTransform = wrapper.style.transform;
-    const todayStr = new Date().toISOString().slice(0,10);
     wrapper.style.transform = "scale(1)";
-    html2canvas(wrapper).then(canvas => {
-        canvas.toBlob(blob => { 
-            hideLoading();
-            shareOrDownload(blob, `Map_${farmers[activeIdx].name}_${todayStr}.jpg`); 
-        }, 'image/jpeg', 0.6);
+    html2canvas(wrapper, { useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
         wrapper.style.transform = originalTransform;
-    }).catch(() => hideLoading());
+        canvas.toBlob(blob => {
+            hideLoading();
+            if (blob) downloadFallback(blob, fileName);
+            else alert("Could not generate map image.");
+        }, 'image/jpeg', 0.85);
+    }).catch(err => {
+        wrapper.style.transform = originalTransform;
+        hideLoading();
+        console.error("Map download failed:", err);
+        alert("Failed to download map image.");
+    });
 }
 
 const mapContainer = document.getElementById('slide_wrapper');
